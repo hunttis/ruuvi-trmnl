@@ -1,0 +1,18 @@
+{
+  "trmnl": {
+    "webhookUrl": "YOUR_TRMNL_WEBHOOK_URL_HERE",
+    "refreshInterval": 300000,
+    "maxTagsToDisplay": 5,
+    "mergeStrategy": "replace",
+    "requestTimeout": 10000
+  },
+  "ruuvi": {
+    "scanTimeout": 5000,
+    "dataRetentionTime": 300000,
+    "tagAliases": {
+      "a0b1c2d3e4f56789": "Living Room",
+      "b1c2d3e4f5678901": "Outdoor",
+      "c2d3e4f567890123": "Bedroom"
+    }
+  }
+}

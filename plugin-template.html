@@ -1,0 +1,179 @@
+<!--
+RuuviTRMNL Plugin Template
+Displays temperature, humidity, and battery data from RuuviTag sensors
+
+Data structure from webhook:
+{
+  "merge_variables": {
+    "ruuvi_tags": [
+      {
+        "id": "a06bd66b",
+        "name": "Living Room",
+        "temperature": 22.6,
+        "humidity": 45.2,
+        "pressure": 1013.25,
+        "battery": 2.89,
+        "signal": -65,
+        "lastUpdated": "2025-10-13T...",
+        "status": "active"
+      },
+      ...
+    ],
+    "lastRefresh": "2025-10-13T...",
+    "totalTags": 3
+  }
+}
+-->
+
+<div class="layout layout--col gap--medium">
+  <!-- Plugin Header -->
+  <div class="layout layout--row layout--stretch-x">
+    <span class="title title--small">RuuviTag Sensors</span>
+    <span class="label label--small text--right">
+      {{ totalTags }} tag{{ totalTags != 1 ? 's' : '' }}
+    </span>
+  </div>
+
+  <!-- Sensor List -->
+  <div class="layout layout--col gap--small">
+    {% for tag in ruuvi_tags %}
+    <div class="item {% if tag.status == 'stale' %}item--emphasis-1{% endif %}">
+      <div
+        class="meta {% if tag.status == 'stale' %}background--pattern-1{% endif %}"
+      ></div>
+      <div class="content">
+        <!-- Tag Name and Status -->
+        <div class="layout layout--row layout--stretch-x">
+          <span class="title title--small">{{ tag.name }}</span>
+          {% if tag.status == 'stale' %}
+          <span class="label label--xxsmall label--underline">STALE</span>
+          {% endif %}
+        </div>
+
+        <!-- Temperature and Humidity (Main metrics) -->
+        <div class="layout layout--row gap--medium">
+          <div class="layout layout--col">
+            <span class="value value--large value--tnums">
+              {% if tag.temperature %}{{ tag.temperature | round: 1 }}°C{% else
+              %}--°C{% endif %}
+            </span>
+            <span class="label label--xsmall">Temperature</span>
+          </div>
+          <div class="layout layout--col">
+            <span class="value value--large value--tnums">
+              {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}--%{%
+              endif %}
+            </span>
+            <span class="label label--xsmall">Humidity</span>
+          </div>
+        </div>
+
+        <!-- Additional metrics (smaller, secondary info) -->
+        <div class="layout layout--row gap--small">
+          {% if tag.pressure %}
+          <div class="layout layout--col">
+            <span class="value value--small value--tnums"
+              >{{ tag.pressure | round: 1 }}</span
+            >
+            <span class="label label--xxsmall">hPa</span>
+          </div>
+          {% endif %} {% if tag.battery %}
+          <div class="layout layout--col">
+            <span class="value value--small value--tnums"
+              >{{ tag.battery | round: 2 }}V</span
+            >
+            <span class="label label--xxsmall">Battery</span>
+          </div>
+          {% endif %} {% if tag.signal %}
+          <div class="layout layout--col">
+            <span class="value value--small value--tnums"
+              >{{ tag.signal }}</span
+            >
+            <span class="label label--xxsmall">dBm</span>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Last update timestamp -->
+        {% if tag.lastUpdated %}
+        <span class="description text--right">
+          Updated: {{ tag.lastUpdated | date: '%H:%M' }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Footer with last refresh time -->
+  {% if lastRefresh %}
+  <div class="layout layout--row layout--center">
+    <span class="label label--xxsmall">
+      Last updated: {{ lastRefresh | date: '%H:%M on %b %d' }}
+    </span>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Compact variant for smaller displays -->
+<!-- 
+Alternative compact layout - replace above with this for dense display:
+
+<div class="layout layout--col gap--small">
+  <div class="layout layout--row layout--stretch-x">
+    <span class="title title--xsmall">RuuviTag Sensors</span>
+    <span class="label label--xxsmall">{{ totalTags }} tags</span>
+  </div>
+
+  {% for tag in ruuvi_tags %}
+    <div class="layout layout--row layout--stretch-x gap--small">
+      <span class="value value--small">{{ tag.name }}</span>
+      <span class="value value--small value--tnums">
+        {{ tag.temperature | round: 1 }}°C
+      </span>
+      <span class="value value--small value--tnums">
+        {{ tag.humidity | round: 0 }}%
+      </span>
+      {% if tag.battery %}
+        <span class="value value--xsmall value--tnums">
+          {{ tag.battery | round: 2 }}V
+        </span>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  {% if lastRefresh %}
+    <span class="label label--xxsmall text--center">
+      {{ lastRefresh | date: '%H:%M' }}
+    </span>
+  {% endif %}
+</div>
+-->
+
+<!-- Grid variant for multiple tags -->
+<!--
+Alternative grid layout for many sensors:
+
+<div class="layout layout--col gap--small">
+  <span class="title title--small text--center">RuuviTag Sensors</span>
+  
+  <div class="layout layout--row layout--stretch-x gap--small">
+    {% for tag in ruuvi_tags %}
+      <div class="layout layout--col stretch-x gap--xsmall border--1 rounded--small padding--small">
+        <span class="title title--xsmall text--center">{{ tag.name }}</span>
+        <span class="value value--medium value--tnums text--center">
+          {{ tag.temperature | round: 1 }}°
+        </span>
+        <span class="value value--small value--tnums text--center">
+          {{ tag.humidity | round: 0 }}%
+        </span>
+        {% if tag.battery %}
+          <span class="label label--xxsmall text--center">
+            {{ tag.battery | round: 2 }}V
+          </span>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+-->
