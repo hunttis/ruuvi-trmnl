@@ -68,31 +68,7 @@ Data structure from webhook:
           </div>
         </div>
 
-        <!-- Additional metrics (smaller, secondary info) -->
-        <div class="layout layout--row gap--small">
-          {% if tag.pressure %}
-          <div class="layout layout--col">
-            <span class="value value--small value--tnums"
-              >{{ tag.pressure | round: 1 }}</span
-            >
-            <span class="label label--xxsmall">hPa</span>
-          </div>
-          {% endif %} {% if tag.battery %}
-          <div class="layout layout--col">
-            <span class="value value--small value--tnums"
-              >{{ tag.battery | round: 2 }}V</span
-            >
-            <span class="label label--xxsmall">Battery</span>
-          </div>
-          {% endif %} {% if tag.signal %}
-          <div class="layout layout--col">
-            <span class="value value--small value--tnums"
-              >{{ tag.signal }}</span
-            >
-            <span class="label label--xxsmall">dBm</span>
-          </div>
-          {% endif %}
-        </div>
+        <!-- Additional metrics section removed - only showing temperature and humidity -->
 
         <!-- Last update timestamp -->
         {% if tag.lastUpdated %}
@@ -134,11 +110,7 @@ Alternative compact layout - replace above with this for dense display:
       <span class="value value--small value--tnums">
         {{ tag.humidity | round: 0 }}%
       </span>
-      {% if tag.battery %}
-        <span class="value value--xsmall value--tnums">
-          {{ tag.battery | round: 2 }}V
-        </span>
-      {% endif %}
+      <!-- Battery removed from compact view -->
     </div>
   {% endfor %}
 
@@ -167,11 +139,7 @@ Alternative grid layout for many sensors:
         <span class="value value--small value--tnums text--center">
           {{ tag.humidity | round: 0 }}%
         </span>
-        {% if tag.battery %}
-          <span class="label label--xxsmall text--center">
-            {{ tag.battery | round: 2 }}V
-          </span>
-        {% endif %}
+        <!-- Battery removed from grid view -->
       </div>
     {% endfor %}
   </div>

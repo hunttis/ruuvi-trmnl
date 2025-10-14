@@ -16,6 +16,8 @@
     "clean": "rm -rf dist",
     "cache:inspect": "ts-node src/cache-inspector.ts",
     "cache:clear": "rm -f ruuvi-cache.json && echo '🗑️  Cache file deleted'",
+    "trmnl:send": "ts-node src/trmnl-oneshot.ts",
+    "trmnl:send:verbose": "ts-node src/trmnl-oneshot.ts --verbose",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
