@@ -13,6 +13,7 @@ A TypeScript application that scans RuuviTag Bluetooth sensors and sends their d
 - **Rich Metrics**: Temperature, humidity, pressure, battery voltage, and signal strength
 - **E-ink Optimized**: Custom TRMNL plugin template designed for 1-bit grayscale displays
 - **Persistent State**: Cache survives restarts and prevents duplicate data transmission
+- **Easy Setup**: Interactive tool to discover sensors and assign nicknames
 - **Configurable**: Sensor aliases, refresh intervals, and webhook settings
 - **Reliable**: Graceful error handling, connection testing, and automatic reconnection
 
@@ -40,10 +41,27 @@ npm install
 ```bash
 # Copy template and edit
 cp config.template.json config.json
-# Edit config.json with your TRMNL webhook URL and sensor aliases
+# Edit config.json with your TRMNL webhook URL
 ```
 
-### 3. Run Application
+### 3. Discover Your RuuviTags
+
+Use the interactive setup tool to find and nickname your sensors:
+
+```bash
+npm run setup
+```
+
+This will:
+
+- Automatically discover nearby RuuviTag sensors
+- Show real-time sensor data (temperature, humidity, battery)
+- Let you assign friendly nicknames to each sensor
+- Automatically update `config.json` with your sensor aliases
+
+See `SETUP_TOOL.md` for detailed instructions.
+
+### 4. Run Application
 
 ```bash
 # Development mode

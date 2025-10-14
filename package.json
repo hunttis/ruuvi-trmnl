@@ -10,6 +10,7 @@
     "build": "tsc",
     "dev": "ts-node src/index.ts",
     "dev:app": "ts-node src/app.ts",
+    "setup": "ts-node src/setup-tags.ts",
     "start": "node dist/index.js",
     "start:app": "node dist/app.js",
     "clean": "rm -rf dist",
