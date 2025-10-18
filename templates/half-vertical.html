@@ -1,20 +1,22 @@
 <!--
 RuuviTRMNL Plugin Template - Half Vertical Layout
-Column layout with conditional timestamps for compact displays
+Row layout with conditional timestamps for compact displays
 Best for: Top/bottom half of screen, narrow displays
 -->
 
-<div class="layout layout--row gap--medium text--center padding--small">
+<div class="layout layout--col gap--small padding--small">
   {% for tag in ruuvi_tags %}
   <div
-    class="layout layout--col gap--xsmall {% if tag.status == 'stale' or tag.status == 'offline' %}background--muted{% endif %} padding--xsmall rounded--small"
+    class="layout layout--col gap--xsmall {% if tag.status == 'stale' or tag.status == 'offline' %}background--muted{% endif %} padding--small rounded--small"
   >
     <!-- Location Name -->
-    <span class="title title--small">{{ tag.name | truncate: 8 }}</span>
+    <div class="layout layout--row">
+      <span class="title title--medium">{{ tag.name }}</span>
+    </div>
 
     <!-- Temperature with conditional timestamp -->
-    <div class="layout layout--col">
-      <span class="value value--large value--tnums">
+    <div class="layout layout--row">
+      <span class="value value--medium value--tnums">
         {% if tag.temperature %}{{ tag.temperature | round: 1 }}°C{% else
         %}-°C{% endif %}
       </span>
@@ -31,13 +33,18 @@ Best for: Top/bottom half of screen, narrow displays
     </div>
 
     <!-- Humidity -->
-    <span class="value value--small value--tnums">
-      {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}-%{% endif %}
-    </span>
+    <div class="layout layout--row">
+      <span class="value value--small value--tnums">
+        {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}-%{% endif
+        %}
+      </span>
+    </div>
 
     <!-- Status if offline -->
     {% if tag.status == 'stale' or tag.status == 'offline' %}
-    <span class="label label--xxxsmall">{{ tag.status | upcase }}</span>
+    <div class="layout layout--row">
+      <span class="label label--xxxsmall">{{ tag.status | upcase }}</span>
+    </div>
     {% endif %}
   </div>
   {% endfor %}
