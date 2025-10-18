@@ -183,4 +183,73 @@ describe("ConfigManager", () => {
       expect(alias).toBe("Tag A06BD66B"); // Falls back to shortId since full MAC not in config
     });
   });
+
+  describe("getOrderedTagIds", () => {
+    it("should return tags in displayOrder when configured", () => {
+      // Create a mock config with displayOrder
+      const mockConfigWithOrder = {
+        ...mockConfig,
+        ruuvi: {
+          ...mockConfig.ruuvi,
+          tagAliases: {
+            tag001: "First",
+            tag002: "Second",
+            tag003: "Third",
+          },
+          displayOrder: ["tag003", "tag001", "tag002"],
+        },
+      };
+
+      jest
+        .spyOn(configManager, "getConfig")
+        .mockReturnValue(mockConfigWithOrder);
+
+      const orderedIds = configManager.getOrderedTagIds();
+      expect(orderedIds).toEqual(["tag003", "tag001", "tag002"]);
+    });
+
+    it("should return tags in natural order when no displayOrder", () => {
+      // Use config without displayOrder
+      const mockConfigNoOrder = {
+        ...mockConfig,
+        ruuvi: {
+          ...mockConfig.ruuvi,
+          tagAliases: {
+            tag001: "First",
+            tag002: "Second",
+          },
+          // No displayOrder property
+        },
+      };
+
+      jest.spyOn(configManager, "getConfig").mockReturnValue(mockConfigNoOrder);
+
+      const orderedIds = configManager.getOrderedTagIds();
+      expect(orderedIds).toEqual(["tag001", "tag002"]);
+    });
+
+    it("should append unordered tags to end", () => {
+      // Config where displayOrder doesn't include all tags
+      const mockConfigPartialOrder = {
+        ...mockConfig,
+        ruuvi: {
+          ...mockConfig.ruuvi,
+          tagAliases: {
+            tag001: "First",
+            tag002: "Second",
+            tag003: "Third",
+            tag004: "Fourth",
+          },
+          displayOrder: ["tag003", "tag001"], // Missing tag002 and tag004
+        },
+      };
+
+      jest
+        .spyOn(configManager, "getConfig")
+        .mockReturnValue(mockConfigPartialOrder);
+
+      const orderedIds = configManager.getOrderedTagIds();
+      expect(orderedIds).toEqual(["tag003", "tag001", "tag002", "tag004"]);
+    });
+  });
 });

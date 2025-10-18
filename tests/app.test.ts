@@ -54,7 +54,10 @@ describe("RuuviTrmnlApp", () => {
     jest.clearAllMocks();
 
     mockConfigManager.getConfig.mockReturnValue(mockConfig);
-    mockConfigManager.getTrmnlWebhookUrl.mockReturnValue(mockConfig.trmnl.webhookUrl);
+    mockConfigManager.getTrmnlWebhookUrl.mockReturnValue(
+      mockConfig.trmnl.webhookUrl
+    );
+    mockConfigManager.getOrderedTagIds.mockReturnValue(["a06bd66b"]);
 
     // Create mock instances
     mockCollector = {

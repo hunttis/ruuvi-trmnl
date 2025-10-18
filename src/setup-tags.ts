@@ -192,6 +192,7 @@ class RuuviTagSetup {
 
       let addedCount = 0;
       let updatedCount = 0;
+      const newTagIds: string[] = [];
 
       for (const tag of this.discoveredTags.values()) {
         if (tag.nickname) {
@@ -202,7 +203,20 @@ class RuuviTagSetup {
             updatedCount++;
           } else {
             addedCount++;
+            newTagIds.push(tag.shortId);
           }
+        }
+      }
+
+      // Update displayOrder to include new tags
+      const currentDisplayOrder = currentConfig.ruuvi.displayOrder || [];
+      const existingTagIds = new Set(currentDisplayOrder);
+      const updatedDisplayOrder = [...currentDisplayOrder];
+
+      // Add new tags to the end of the display order
+      for (const tagId of newTagIds) {
+        if (!existingTagIds.has(tagId)) {
+          updatedDisplayOrder.push(tagId);
         }
       }
 
@@ -212,6 +226,7 @@ class RuuviTagSetup {
         ruuvi: {
           ...currentConfig.ruuvi,
           tagAliases,
+          displayOrder: updatedDisplayOrder,
         },
       };
 
@@ -226,10 +241,18 @@ class RuuviTagSetup {
       console.log(`   📝 Added: ${addedCount} new tags`);
       console.log(`   🔄 Updated: ${updatedCount} existing tags`);
 
-      // Show current tagAliases
+      // Show current tagAliases and displayOrder
       console.log("\n📋 Current tagAliases:");
       for (const [id, alias] of Object.entries(tagAliases)) {
         console.log(`   ${id} → ${alias}`);
+      }
+
+      if (updatedDisplayOrder.length > 0) {
+        console.log("\n📐 Display order (left to right, top to bottom):");
+        updatedDisplayOrder.forEach((id, index) => {
+          const alias = tagAliases[id] || `Tag ${id}`;
+          console.log(`   ${index + 1}. ${alias} (${id})`);
+        });
       }
     } catch (error) {
       console.error("❌ Error saving config:", error);

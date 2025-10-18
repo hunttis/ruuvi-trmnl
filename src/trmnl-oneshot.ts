@@ -26,7 +26,7 @@ export class TrmnlOneShot {
     this.verbose = options.verbose || false;
 
     // Get the list of tags we need to collect data for
-    this.requiredTags = Object.keys(configManager.getConfig().ruuvi.tagAliases);
+    this.requiredTags = configManager.getOrderedTagIds();
 
     if (this.requiredTags.length === 0) {
       throw new Error(

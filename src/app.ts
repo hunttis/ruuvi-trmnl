@@ -136,7 +136,7 @@ export class RuuviTrmnlApp {
 
       // Create complete dataset with all configured sensors
       const config = configManager.getConfig();
-      const allConfiguredTagIds = Object.keys(config.ruuvi.tagAliases);
+      const allConfiguredTagIds = configManager.getOrderedTagIds();
       const existingTags = this.ruuviCollector.getAllConfiguredTags();
 
       // Create map of existing data by short ID

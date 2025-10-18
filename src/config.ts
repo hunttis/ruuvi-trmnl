@@ -13,6 +13,7 @@ export interface Config {
     scanTimeout: number;
     dataRetentionTime: number;
     tagAliases: Record<string, string>;
+    displayOrder?: string[]; // Optional array of tag IDs in display order
   };
 }
 
@@ -80,6 +81,33 @@ class ConfigManager {
       config.ruuvi.tagAliases[shortId] ||
       `Tag ${shortId}`
     );
+  }
+
+  public getOrderedTagIds(): string[] {
+    const config = this.getConfig();
+    const allTagIds = Object.keys(config.ruuvi.tagAliases);
+
+    // If displayOrder is configured, use it to order tags
+    if (config.ruuvi.displayOrder && config.ruuvi.displayOrder.length > 0) {
+      const orderedIds: string[] = [];
+      const remainingIds = new Set(allTagIds);
+
+      // Add tags in the specified order
+      for (const tagId of config.ruuvi.displayOrder) {
+        if (remainingIds.has(tagId)) {
+          orderedIds.push(tagId);
+          remainingIds.delete(tagId);
+        }
+      }
+
+      // Add any remaining tags that weren't in displayOrder
+      orderedIds.push(...Array.from(remainingIds));
+
+      return orderedIds;
+    }
+
+    // If no displayOrder, return tags in their natural order (Object.keys order)
+    return allTagIds;
   }
 }
 

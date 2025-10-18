@@ -126,4 +126,94 @@ describe("CacheManager", () => {
       expect(changedTags).toHaveLength(0);
     });
   });
+
+  describe("ordering", () => {
+    it("should preserve order in getAllTags", () => {
+      const cacheManager = new CacheManager();
+
+      // Add tags in one order
+      cacheManager.updateTagData({
+        id: "tag001",
+        name: "First",
+        temperature: 20.0,
+        humidity: 50.0,
+        lastUpdated: new Date().toISOString(),
+        status: "active",
+      });
+
+      cacheManager.updateTagData({
+        id: "tag002",
+        name: "Second",
+        temperature: 22.0,
+        humidity: 55.0,
+        lastUpdated: new Date().toISOString(),
+        status: "active",
+      });
+
+      cacheManager.updateTagData({
+        id: "tag003",
+        name: "Third",
+        temperature: 24.0,
+        humidity: 60.0,
+        lastUpdated: new Date().toISOString(),
+        status: "active",
+      });
+
+      // Request in specific order
+      const orderedTags = cacheManager.getAllTags([
+        "tag003",
+        "tag001",
+        "tag002",
+      ]);
+
+      expect(orderedTags).toHaveLength(3);
+      expect(orderedTags[0]?.id).toBe("tag003");
+      expect(orderedTags[1]?.id).toBe("tag001");
+      expect(orderedTags[2]?.id).toBe("tag002");
+    });
+
+    it("should preserve order in getChangedTags", () => {
+      const cacheManager = new CacheManager();
+
+      // Add tags
+      cacheManager.updateTagData({
+        id: "tag001",
+        name: "First",
+        temperature: 20.0,
+        humidity: 50.0,
+        lastUpdated: new Date().toISOString(),
+        status: "active",
+      });
+
+      cacheManager.updateTagData({
+        id: "tag002",
+        name: "Second",
+        temperature: 22.0,
+        humidity: 55.0,
+        lastUpdated: new Date().toISOString(),
+        status: "active",
+      });
+
+      cacheManager.updateTagData({
+        id: "tag003",
+        name: "Third",
+        temperature: 24.0,
+        humidity: 60.0,
+        lastUpdated: new Date().toISOString(),
+        status: "active",
+      });
+
+      // Request changed tags in specific order
+      const changedTags = cacheManager.getChangedTags([
+        "tag003",
+        "tag001",
+        "tag002",
+      ]);
+
+      expect(changedTags).toHaveLength(3);
+      expect(changedTags[0]?.id).toBe("tag003");
+      expect(changedTags[1]?.id).toBe("tag001");
+      expect(changedTags[2]?.id).toBe("tag002");
+    });
+  });
 });

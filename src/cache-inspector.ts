@@ -20,8 +20,7 @@ async function inspectCache() {
 
     // Get configuration to see which tags are allowed
     const config = configManager.getConfig();
-    const allowedTagIds = Object.keys(config.ruuvi.tagAliases);
-
+    const allowedTagIds = configManager.getOrderedTagIds();
     console.log("📋 Configured tags (tagAliases):");
     for (const [tagId, alias] of Object.entries(config.ruuvi.tagAliases)) {
       console.log(`  • ${tagId}: ${alias}`);

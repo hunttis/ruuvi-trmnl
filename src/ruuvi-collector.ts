@@ -176,8 +176,7 @@ export class RuuviCollector {
    * Get tags that have changed and are configured in tagAliases
    */
   public getChangedTagsForSending(): RuuviTagData[] {
-    const config = configManager.getConfig();
-    const allowedTagIds = Object.keys(config.ruuvi.tagAliases);
+    const allowedTagIds = configManager.getOrderedTagIds();
 
     return this.cacheManager.getChangedTags(allowedTagIds);
   }
@@ -186,8 +185,7 @@ export class RuuviCollector {
    * Get all configured tags (from cache), regardless of change status
    */
   public getAllConfiguredTags(): RuuviTagData[] {
-    const config = configManager.getConfig();
-    const allowedTagIds = Object.keys(config.ruuvi.tagAliases);
+    const allowedTagIds = configManager.getOrderedTagIds();
 
     return this.cacheManager.getAllTags(allowedTagIds);
   }
@@ -196,8 +194,7 @@ export class RuuviCollector {
    * Check if any configured tags have changed
    */
   public hasChangedConfiguredTags(): boolean {
-    const config = configManager.getConfig();
-    const allowedTagIds = Object.keys(config.ruuvi.tagAliases);
+    const allowedTagIds = configManager.getOrderedTagIds();
 
     return this.cacheManager.getChangedTags(allowedTagIds).length > 0;
   }
@@ -217,8 +214,7 @@ export class RuuviCollector {
     allowedTags: number;
     pendingSend: number;
   } {
-    const config = configManager.getConfig();
-    const allowedTagIds = Object.keys(config.ruuvi.tagAliases);
+    const allowedTagIds = configManager.getOrderedTagIds();
 
     return this.cacheManager.getCacheStatsForAllowedTags(allowedTagIds);
   }

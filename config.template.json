@@ -13,6 +13,7 @@
       "a0b1c2d3e4f56789": "Living Room",
       "b1c2d3e4f5678901": "Outdoor",
       "c2d3e4f567890123": "Bedroom"
-    }
+    },
+    "displayOrder": ["a0b1c2d3e4f56789", "b1c2d3e4f5678901", "c2d3e4f567890123"]
   }
 }

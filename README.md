@@ -98,7 +98,8 @@ npm run build && npm run start:app
       "a0b1c2d3e4f56789": "Living Room",
       "b1c2d3e4f5678901": "Outdoor",
       "c2d3e4f567890123": "Bedroom"
-    }
+    },
+    "displayOrder": ["a0b1c2d3e4f56789", "b1c2d3e4f5678901", "c2d3e4f567890123"]
   }
 }
 ```
@@ -107,6 +108,7 @@ npm run build && npm run start:app
 
 - **refreshInterval**: Update frequency (300000ms = 5 minutes for TRMNL rate limiting)
 - **tagAliases**: Map MAC addresses to friendly names (only these sensors are sent to TRMNL)
+- **displayOrder**: Optional array specifying the order sensors appear in layouts (left to right, top to bottom)
 - **dataRetentionTime**: How long to keep sensor data before marking as stale
 
 ## 💾 Smart Cache System

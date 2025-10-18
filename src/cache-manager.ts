@@ -71,7 +71,7 @@ export class CacheManager {
    * Get tags that have changed since last sent and are in the allowed list
    */
   public getChangedTags(allowedTagIds: string[]): RuuviTagData[] {
-    const changedTags: RuuviTagData[] = [];
+    const changedTagMap = new Map<string, RuuviTagData>();
 
     for (const [tagId, entry] of Object.entries(this.cache)) {
       // Only include tags that are in the allowed list (tagAliases)
@@ -86,7 +86,15 @@ export class CacheManager {
         new Date(entry.data.lastUpdated) > new Date(entry.lastSent);
 
       if (hasChangedSinceLastSent) {
-        changedTags.push(entry.data);
+        changedTagMap.set(shortId, entry.data);
+      }
+    }
+
+    // Return tags in the order specified by allowedTagIds
+    const changedTags: RuuviTagData[] = [];
+    for (const tagId of allowedTagIds) {
+      if (changedTagMap.has(tagId)) {
+        changedTags.push(changedTagMap.get(tagId)!);
       }
     }
 
@@ -126,11 +134,20 @@ export class CacheManager {
    */
   public getAllTags(allowedTagIds: string[]): RuuviTagData[] {
     const tags: RuuviTagData[] = [];
+    const tagMap = new Map<string, RuuviTagData>();
 
+    // First, build a map of available tags
     for (const [tagId, entry] of Object.entries(this.cache)) {
       const shortId = tagId.substring(0, 8);
       if (allowedTagIds.includes(shortId)) {
-        tags.push(entry.data);
+        tagMap.set(shortId, entry.data);
+      }
+    }
+
+    // Then, add tags in the order specified by allowedTagIds
+    for (const tagId of allowedTagIds) {
+      if (tagMap.has(tagId)) {
+        tags.push(tagMap.get(tagId)!);
       }
     }
 
