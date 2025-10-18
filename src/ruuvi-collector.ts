@@ -1,6 +1,7 @@
 import { configManager } from "./config";
 import { RuuviTagData, RawRuuviData, RawRuuviTag } from "./types";
 import { CacheManager } from "./cache-manager";
+import { Logger } from "./logger";
 
 const ruuvi = require("node-ruuvitag");
 
@@ -27,7 +28,7 @@ export class RuuviCollector {
         const config = configManager.getConfig();
         const tagName = configManager.getTagAlias(tag.id);
 
-        console.log(
+        Logger.log(
           `🎯 Found RuuviTag: ${tagName} (${tag.id.substring(0, 8)}...)`
         );
 
@@ -48,7 +49,7 @@ export class RuuviCollector {
 
     // Listen for warnings
     ruuvi.on("warning", (message: string) => {
-      console.warn(`⚠️  RuuviTag warning: ${message}`);
+      Logger.warn(`⚠️  RuuviTag warning: ${message}`);
     });
   }
 
@@ -88,12 +89,12 @@ export class RuuviCollector {
 
   public startScanning(): void {
     if (this.isScanning) {
-      console.log("ℹ️  Already scanning...");
+      Logger.log("ℹ️  Already scanning...");
       return;
     }
 
     this.isScanning = true;
-    console.log("🔍 Starting RuuviTag scan...");
+    Logger.log("🔍 Starting RuuviTag scan...");
 
     // The ruuvi library automatically starts scanning when we set up listeners
     // So we don't need to explicitly call a start method
@@ -101,7 +102,7 @@ export class RuuviCollector {
 
   public stopScanning(): void {
     this.isScanning = false;
-    console.log("⏹️  Stopping RuuviTag scan...");
+    Logger.log("⏹️  Stopping RuuviTag scan...");
     // Note: node-ruuvitag doesn't have a clean stop method
   }
 
@@ -154,12 +155,12 @@ export class RuuviCollector {
 
   public async findTagsSnapshot(): Promise<RuuviTagData[]> {
     try {
-      console.log("📡 Taking RuuviTag snapshot...");
+      Logger.log("📡 Taking RuuviTag snapshot...");
       const tags = await ruuvi.findTags();
-      console.log(`📋 Snapshot found ${tags.length} tag(s)`);
+      Logger.log(`📋 Snapshot found ${tags.length} tag(s)`);
       return this.getActiveTagData();
     } catch (error) {
-      console.log("ℹ️  Snapshot method found no tags (normal if none nearby)");
+      Logger.log("ℹ️  Snapshot method found no tags (normal if none nearby)");
       return this.getActiveTagData();
     }
   }

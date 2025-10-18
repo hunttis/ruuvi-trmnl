@@ -3,6 +3,7 @@ import { RuuviCollector } from "./ruuvi-collector";
 import { TrmnlWebhookSender } from "./trmnl-sender";
 import { RuuviTagData } from "./types";
 import { ConsoleDisplay, AppStatus } from "./console-display";
+import { Logger } from "./logger";
 
 export class RuuviTrmnlApp {
   private ruuviCollector: RuuviCollector;
@@ -22,6 +23,11 @@ export class RuuviTrmnlApp {
     this.consoleDisplay = new ConsoleDisplay();
     this.useConsoleDisplay = useConsoleDisplay;
 
+    // Suppress console output when using dashboard display
+    if (useConsoleDisplay) {
+      Logger.setSuppressConsole(true);
+    }
+
     const config = configManager.getConfig();
     this.refreshInterval = config.trmnl.refreshInterval * 1000; // Convert seconds to milliseconds
   }
@@ -37,7 +43,7 @@ export class RuuviTrmnlApp {
     }
 
     this.startTime = new Date();
-    
+
     // Start the console display if enabled
     if (this.useConsoleDisplay) {
       this.consoleDisplay.start();
@@ -50,9 +56,14 @@ export class RuuviTrmnlApp {
     const connectionOk = await this.trmnlSender.testConnection();
     if (!connectionOk) {
       if (this.useConsoleDisplay) {
-        this.updateConsoleDisplay("❌ TRMNL connection test failed. Please check your webhook URL.", true);
+        this.updateConsoleDisplay(
+          "❌ TRMNL connection test failed. Please check your webhook URL.",
+          true
+        );
       } else {
-        console.error("❌ TRMNL connection test failed. Please check your webhook URL.");
+        console.error(
+          "❌ TRMNL connection test failed. Please check your webhook URL."
+        );
       }
       return;
     }
@@ -83,17 +94,27 @@ export class RuuviTrmnlApp {
     this.intervalId = setInterval(() => {
       this.sendDataCycle().catch((error) => {
         if (this.useConsoleDisplay) {
-          this.updateConsoleDisplay(`❌ Error in periodic data cycle: ${error instanceof Error ? error.message : error}`, true);
+          this.updateConsoleDisplay(
+            `❌ Error in periodic data cycle: ${
+              error instanceof Error ? error.message : error
+            }`,
+            true
+          );
         } else {
-          console.error("❌ Error in periodic data cycle:", error instanceof Error ? error.message : error);
+          console.error(
+            "❌ Error in periodic data cycle:",
+            error instanceof Error ? error.message : error
+          );
         }
       });
     }, this.refreshInterval);
 
     this.isRunning = true;
-    
+
     if (this.useConsoleDisplay) {
-      this.updateConsoleDisplay("✅ RuuviTRMNL application started successfully");
+      this.updateConsoleDisplay(
+        "✅ RuuviTRMNL application started successfully"
+      );
     } else {
       console.log("✅ RuuviTRMNL application started successfully");
     }
@@ -136,16 +157,19 @@ export class RuuviTrmnlApp {
     await this.ruuviCollector.saveCache();
 
     this.isRunning = false;
-    
+
     // Stop console display if enabled
     if (this.useConsoleDisplay) {
       this.consoleDisplay.stop();
     }
-    
+
     console.log("✅ RuuviTRMNL application stopped");
   }
 
-  private updateConsoleDisplay(message?: string, isError: boolean = false): void {
+  private updateConsoleDisplay(
+    message?: string,
+    isError: boolean = false
+  ): void {
     const tags = this.ruuviCollector.getAllConfiguredTags();
     const collectorStats = this.ruuviCollector.getStats();
     const cacheStats = this.ruuviCollector.getCacheStats();
@@ -158,7 +182,7 @@ export class RuuviTrmnlApp {
       collectorStats,
       cacheStats,
       webhookInfo,
-      tags
+      tags,
     };
 
     if (this.lastSentTime > 0) {
@@ -255,9 +279,13 @@ export class RuuviTrmnlApp {
 
       // Update display with latest status
       this.updateConsoleDisplay();
-      
     } catch (error) {
-      this.updateConsoleDisplay(`Error in data cycle: ${error instanceof Error ? error.message : error}`, true);
+      this.updateConsoleDisplay(
+        `Error in data cycle: ${
+          error instanceof Error ? error.message : error
+        }`,
+        true
+      );
     }
   }
 
@@ -310,7 +338,6 @@ async function main(): Promise<void> {
     // Create and start the application
     const app = new RuuviTrmnlApp();
     await app.start();
-
   } catch (error) {
     console.error(
       "💥 Failed to start application:",

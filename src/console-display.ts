@@ -28,7 +28,8 @@ export interface AppStatus {
 export class ConsoleDisplay {
   private displayInterval: NodeJS.Timeout | null = null;
   private status: AppStatus;
-  private readonly refreshRate = 1000; // Update display every second
+  private readonly refreshRate = 2000; // Update display every 2 seconds
+  private lastOutput: string = "";
 
   constructor() {
     this.status = {
@@ -36,24 +37,24 @@ export class ConsoleDisplay {
       startTime: new Date(),
       collectorStats: { totalDiscovered: 0, activeCount: 0, staleCount: 0 },
       cacheStats: { totalTags: 0, allowedTags: 0, pendingSend: 0 },
-      webhookInfo: { url: "", strategy: "replace", timeout: 10000 }
+      webhookInfo: { url: "", strategy: "replace", timeout: 10000 },
     };
   }
 
   public start(): void {
     // Clear screen and hide cursor
-    process.stdout.write('\x1b[2J\x1b[H\x1b[?25l');
-    
+    process.stdout.write("\x1b[2J\x1b[H\x1b[?25l");
+
     // Initial render
     this.render();
-    
+
     // Set up periodic refresh
     this.displayInterval = setInterval(() => {
       this.render();
     }, this.refreshRate);
 
     // Handle graceful shutdown
-    process.on('SIGINT', () => {
+    process.on("SIGINT", () => {
       this.stop();
       process.exit(0);
     });
@@ -64,9 +65,9 @@ export class ConsoleDisplay {
       clearInterval(this.displayInterval);
       this.displayInterval = null;
     }
-    
+
     // Show cursor and add final newline
-    process.stdout.write('\x1b[?25h\n');
+    process.stdout.write("\x1b[?25h\n");
   }
 
   public updateStatus(status: Partial<AppStatus>): void {
@@ -74,44 +75,52 @@ export class ConsoleDisplay {
   }
 
   private render(): void {
-    // Move cursor to top-left
-    process.stdout.write('\x1b[H');
-
     const lines: string[] = [];
-    const width = process.stdout.columns || 80;
-    const separator = '─'.repeat(width);
+    const width = process.stdout.columns || 120;
+    const separator = "─".repeat(width);
 
     // Header
-    lines.push('');
-    lines.push(this.centerText('🏷️ RuuviTRMNL Dashboard', width));
-    lines.push('');
+    lines.push("");
+    lines.push(this.centerText("🏷️ RuuviTRMNL Dashboard", width));
+    lines.push("");
     lines.push(separator);
 
     // Status section
-    lines.push('');
-    lines.push('📊 Application Status');
-    lines.push(`   Running: ${this.status.isRunning ? '✅ Active' : '❌ Stopped'}`);
+    lines.push("");
+    lines.push("📊 Application Status");
+    lines.push(
+      `   Running: ${this.status.isRunning ? "✅ Active" : "❌ Stopped"}`
+    );
     lines.push(`   Started: ${this.status.startTime.toLocaleString()}`);
-    
+
     if (this.status.lastUpdateTime) {
-      lines.push(`   Last Update: ${this.status.lastUpdateTime.toLocaleTimeString()}`);
+      lines.push(
+        `   Last Update: ${this.status.lastUpdateTime.toLocaleTimeString()}`
+      );
     }
 
-    const uptime = Math.floor((Date.now() - this.status.startTime.getTime()) / 1000);
+    const uptime = Math.floor(
+      (Date.now() - this.status.startTime.getTime()) / 1000
+    );
     lines.push(`   Uptime: ${this.formatDuration(uptime)}`);
 
     // TRMNL section
-    lines.push('');
-    lines.push('🔗 TRMNL Connection');
+    lines.push("");
+    lines.push("🔗 TRMNL Connection");
     lines.push(`   Webhook: ${this.status.webhookInfo.url}`);
     lines.push(`   Strategy: ${this.status.webhookInfo.strategy}`);
-    
+
     if (this.status.lastSentTime) {
-      lines.push(`   Last Sent: ${this.status.lastSentTime.toLocaleTimeString()}`);
+      lines.push(
+        `   Last Sent: ${this.status.lastSentTime.toLocaleTimeString()}`
+      );
     }
-    
+
     if (this.status.nextSendTime) {
-      const timeUntilNext = Math.max(0, Math.floor((this.status.nextSendTime.getTime() - Date.now()) / 1000));
+      const timeUntilNext = Math.max(
+        0,
+        Math.floor((this.status.nextSendTime.getTime() - Date.now()) / 1000)
+      );
       if (timeUntilNext > 0) {
         lines.push(`   Next Available: ${this.formatDuration(timeUntilNext)}`);
       } else {
@@ -120,9 +129,11 @@ export class ConsoleDisplay {
     }
 
     // Statistics section
-    lines.push('');
-    lines.push('📈 Statistics');
-    lines.push(`   Discovered Tags: ${this.status.collectorStats.totalDiscovered}`);
+    lines.push("");
+    lines.push("📈 Statistics");
+    lines.push(
+      `   Discovered Tags: ${this.status.collectorStats.totalDiscovered}`
+    );
     lines.push(`   Active Tags: ${this.status.collectorStats.activeCount}`);
     lines.push(`   Stale Tags: ${this.status.collectorStats.staleCount}`);
     lines.push(`   Configured Tags: ${this.status.cacheStats.allowedTags}`);
@@ -130,46 +141,61 @@ export class ConsoleDisplay {
 
     // Sensor data section
     if (this.status.tags && this.status.tags.length > 0) {
-      lines.push('');
-      lines.push('🌡️ Sensor Readings');
-      
+      lines.push("");
+      lines.push("🌡️ Sensor Readings");
+
       for (const tag of this.status.tags) {
-        const temp = tag.temperature !== undefined ? `${tag.temperature.toFixed(1)}°C` : 'N/A';
-        const humidity = tag.humidity !== undefined ? `${tag.humidity.toFixed(0)}%` : 'N/A';
-        const battery = tag.battery !== undefined ? `${tag.battery.toFixed(2)}V` : 'N/A';
+        const temp =
+          tag.temperature !== undefined
+            ? `${tag.temperature.toFixed(1)}°C`
+            : "N/A";
+        const humidity =
+          tag.humidity !== undefined ? `${tag.humidity.toFixed(0)}%` : "N/A";
+        const battery =
+          tag.battery !== undefined ? `${tag.battery.toFixed(2)}V` : "N/A";
         const age = this.getDataAge(tag.lastUpdated);
         const statusIcon = this.getStatusIcon(tag.status);
-        
-        lines.push(`   ${statusIcon} ${tag.name.padEnd(15)} ${temp.padStart(8)} ${humidity.padStart(6)} ${battery.padStart(7)} (${age})`);
+
+        lines.push(
+          `   ${statusIcon} ${tag.name.padEnd(15)} ${temp.padStart(
+            8
+          )} ${humidity.padStart(6)} ${battery.padStart(7)} (${age})`
+        );
       }
     }
 
     // Error section
     if (this.status.lastError) {
-      lines.push('');
-      lines.push('❌ Latest Error');
+      lines.push("");
+      lines.push("❌ Latest Error");
       lines.push(`   ${this.status.lastError}`);
     }
 
     // Footer
-    lines.push('');
+    lines.push("");
     lines.push(separator);
-    lines.push(this.centerText('Press Ctrl+C to stop', width));
-    lines.push('');
+    lines.push(this.centerText("Press Ctrl+C to stop", width));
+    lines.push("");
 
     // Pad with empty lines to clear any previous longer output
-    const targetLines = 35;
+    const targetLines = 30;
     while (lines.length < targetLines) {
-      lines.push('');
+      lines.push("");
     }
 
-    // Output all lines
-    process.stdout.write(lines.join('\n'));
+    // Join output and only update if different
+    const newOutput = lines.join("\n");
+    if (newOutput !== this.lastOutput) {
+      // Clear screen and output new content
+      process.stdout.write("\x1b[2J\x1b[H");
+      process.stdout.write(newOutput);
+      this.lastOutput = newOutput;
+    }
   }
 
   private centerText(text: string, width: number): string {
     const padding = Math.max(0, Math.floor((width - text.length) / 2));
-    return ' '.repeat(padding) + text;
+    return " ".repeat(padding) + text;
   }
 
   private formatDuration(seconds: number): string {
@@ -187,8 +213,10 @@ export class ConsoleDisplay {
   }
 
   private getDataAge(lastUpdated: string): string {
-    const age = Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 1000);
-    
+    const age = Math.floor(
+      (Date.now() - new Date(lastUpdated).getTime()) / 1000
+    );
+
     if (age < 60) {
       return `${age}s ago`;
     } else if (age < 3600) {
@@ -200,10 +228,14 @@ export class ConsoleDisplay {
 
   private getStatusIcon(status: string): string {
     switch (status) {
-      case 'active': return '🟢';
-      case 'stale': return '🟡';
-      case 'offline': return '🔴';
-      default: return '⚪';
+      case "active":
+        return "🟢";
+      case "stale":
+        return "🟡";
+      case "offline":
+        return "🔴";
+      default:
+        return "⚪";
     }
   }
 }

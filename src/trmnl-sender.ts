@@ -5,6 +5,7 @@ import {
   RuuviCollectionData,
   RuuviTagData,
 } from "./types";
+import { Logger } from "./logger";
 
 export class TrmnlWebhookSender {
   private readonly webhookUrl: string;
@@ -24,18 +25,18 @@ export class TrmnlWebhookSender {
       const response = await this.makeWebhookRequest(payload);
 
       if (response.success) {
-        console.log(
+        Logger.log(
           `✅ Successfully sent data for ${tagData.length} tags to TRMNL`
         );
         return true;
       } else {
-        console.error(
+        Logger.error(
           `❌ TRMNL webhook failed: ${response.message || response.error}`
         );
         return false;
       }
     } catch (error) {
-      console.error(
+      Logger.error(
         `❌ Error sending to TRMNL: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
@@ -63,12 +64,12 @@ export class TrmnlWebhookSender {
 
     // Log payload size for debugging
     const payloadSize = JSON.stringify(payload).length;
-    console.log(
+    Logger.log(
       `📦 Payload size: ${payloadSize} bytes (limit: 2KB for standard, 5KB for TRMNL+)`
     );
 
     if (payloadSize > 2048) {
-      console.warn(
+      Logger.warn(
         `⚠️  Payload size (${payloadSize}B) exceeds standard limit (2KB). Consider TRMNL+ or reduce data.`
       );
     }
@@ -138,7 +139,7 @@ export class TrmnlWebhookSender {
 
   public async testConnection(): Promise<boolean> {
     try {
-      console.log("🔍 Testing TRMNL webhook connection...");
+      Logger.log("🔍 Testing TRMNL webhook connection...");
 
       // Send a minimal test payload
       const testPayload: TrmnlWebhookPayload = {
@@ -152,16 +153,16 @@ export class TrmnlWebhookSender {
       const response = await this.makeWebhookRequest(testPayload);
 
       if (response.success) {
-        console.log("✅ TRMNL webhook connection test successful");
+        Logger.log("✅ TRMNL webhook connection test successful");
         return true;
       } else {
-        console.error(
+        Logger.error(
           `❌ TRMNL webhook connection test failed: ${response.error}`
         );
         return false;
       }
     } catch (error) {
-      console.error(
+      Logger.error(
         `❌ TRMNL webhook connection test error: ${
           error instanceof Error ? error.message : "Unknown"
         }`

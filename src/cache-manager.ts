@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { RuuviTagData } from "./types";
+import { Logger } from "./logger";
 
 export interface CacheEntry {
   data: RuuviTagData;
@@ -31,9 +32,9 @@ export class CacheManager {
 
     try {
       await this.loadFromFile();
-      console.log(`📁 Cache loaded from ${this.cacheFilePath}`);
+      Logger.log(`📁 Cache loaded from ${this.cacheFilePath}`);
     } catch (error) {
-      console.log(`📁 Creating new cache file at ${this.cacheFilePath}`);
+      Logger.log(`📁 Creating new cache file at ${this.cacheFilePath}`);
       await this.saveToFile();
     }
 
@@ -57,7 +58,7 @@ export class CacheManager {
         ...(existingEntry?.lastSent && { lastSent: existingEntry.lastSent }),
       };
 
-      console.log(
+      Logger.log(
         `🔄 Cache updated for ${tagData.name || tagId}: ${
           hasChanged ? "CHANGED" : "unchanged"
         }`
@@ -115,9 +116,8 @@ export class CacheManager {
 
     // Save to file after marking as sent
     this.saveToFile().catch((error) => {
-      console.error(
-        "❌ Failed to save cache after marking tags as sent:",
-        error
+      Logger.error(
+        "❌ Failed to save cache after marking tags as sent:" + error
       );
     });
   }
@@ -221,7 +221,7 @@ export class CacheManager {
         "utf8"
       );
     } catch (error) {
-      console.error("❌ Failed to save cache to file:", error);
+      Logger.error("❌ Failed to save cache to file:" + error);
       throw error;
     }
   }
@@ -239,7 +239,7 @@ export class CacheManager {
 
       if (cacheData.cache) {
         this.cache = cacheData.cache;
-        console.log(
+        Logger.log(
           `📁 Loaded ${Object.keys(this.cache).length} cached entries from file`
         );
       }
@@ -249,7 +249,7 @@ export class CacheManager {
         this.cache = {};
         return;
       }
-      console.error("❌ Failed to load cache from file:", error);
+      Logger.error("❌ Failed to load cache from file:" + error);
       throw error;
     }
   }
@@ -293,7 +293,7 @@ export class CacheManager {
   public clearCache(): void {
     this.cache = {};
     this.saveToFile().catch((error) => {
-      console.error("❌ Failed to save cleared cache:", error);
+      Logger.error("❌ Failed to save cleared cache:" + error);
     });
   }
 }
