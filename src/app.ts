@@ -2,19 +2,25 @@ import { configManager } from "./config";
 import { RuuviCollector } from "./ruuvi-collector";
 import { TrmnlWebhookSender } from "./trmnl-sender";
 import { RuuviTagData } from "./types";
+import { ConsoleDisplay, AppStatus } from "./console-display";
 
 export class RuuviTrmnlApp {
   private ruuviCollector: RuuviCollector;
   private trmnlSender: TrmnlWebhookSender;
+  private consoleDisplay: ConsoleDisplay;
   private intervalId: NodeJS.Timeout | null = null;
   private isRunning = false;
   private readonly refreshInterval: number;
   private lastSentTime: number = 0;
   private readonly minSendInterval: number = 5 * 60 * 1000; // 5 minutes in milliseconds
+  private startTime: Date = new Date();
+  private readonly useConsoleDisplay: boolean;
 
-  constructor() {
+  constructor(useConsoleDisplay: boolean = true) {
     this.ruuviCollector = new RuuviCollector();
     this.trmnlSender = new TrmnlWebhookSender();
+    this.consoleDisplay = new ConsoleDisplay();
+    this.useConsoleDisplay = useConsoleDisplay;
 
     const config = configManager.getConfig();
     this.refreshInterval = config.trmnl.refreshInterval * 1000; // Convert seconds to milliseconds
@@ -22,33 +28,49 @@ export class RuuviTrmnlApp {
 
   public async start(): Promise<void> {
     if (this.isRunning) {
-      console.log("⚠️  App is already running");
+      if (this.useConsoleDisplay) {
+        this.updateConsoleDisplay("⚠️  App is already running");
+      } else {
+        console.log("⚠️  App is already running");
+      }
       return;
     }
 
-    console.log("🚀 Starting RuuviTRMNL application...");
-    console.log(
-      `📡 Refresh interval: ${this.refreshInterval / 1000}s (${Math.round(
-        this.refreshInterval / 60000
-      )} minutes)`
-    );
-    console.log(`🔗 TRMNL webhook: ${this.trmnlSender.getWebhookInfo().url}`);
+    this.startTime = new Date();
+    
+    // Start the console display if enabled
+    if (this.useConsoleDisplay) {
+      this.consoleDisplay.start();
+      this.updateConsoleDisplay("🚀 Starting RuuviTRMNL application...");
+    } else {
+      console.log("🚀 Starting RuuviTRMNL application...");
+    }
 
     // Test TRMNL connection first
     const connectionOk = await this.trmnlSender.testConnection();
     if (!connectionOk) {
-      console.error(
-        "❌ TRMNL connection test failed. Please check your webhook URL."
-      );
+      if (this.useConsoleDisplay) {
+        this.updateConsoleDisplay("❌ TRMNL connection test failed. Please check your webhook URL.", true);
+      } else {
+        console.error("❌ TRMNL connection test failed. Please check your webhook URL.");
+      }
       return;
     }
 
     // Initialize cache system first
-    console.log("📁 Initializing cache system...");
+    if (this.useConsoleDisplay) {
+      this.updateConsoleDisplay("📁 Initializing cache system...");
+    } else {
+      console.log("📁 Initializing cache system...");
+    }
     await this.ruuviCollector.initialize();
 
     // Start RuuviTag scanning
-    console.log("🔍 Starting RuuviTag scanning...");
+    if (this.useConsoleDisplay) {
+      this.updateConsoleDisplay("🔍 Starting RuuviTag scanning...");
+    } else {
+      console.log("🔍 Starting RuuviTag scanning...");
+    }
     await this.ruuviCollector.startScanning();
 
     // Give it a moment to discover initial tags
@@ -60,15 +82,21 @@ export class RuuviTrmnlApp {
     // Set up periodic sending
     this.intervalId = setInterval(() => {
       this.sendDataCycle().catch((error) => {
-        console.error(
-          "❌ Error in periodic data cycle:",
-          error instanceof Error ? error.message : error
-        );
+        if (this.useConsoleDisplay) {
+          this.updateConsoleDisplay(`❌ Error in periodic data cycle: ${error instanceof Error ? error.message : error}`, true);
+        } else {
+          console.error("❌ Error in periodic data cycle:", error instanceof Error ? error.message : error);
+        }
       });
     }, this.refreshInterval);
 
     this.isRunning = true;
-    console.log("✅ RuuviTRMNL application started successfully");
+    
+    if (this.useConsoleDisplay) {
+      this.updateConsoleDisplay("✅ RuuviTRMNL application started successfully");
+    } else {
+      console.log("✅ RuuviTRMNL application started successfully");
+    }
 
     // Set up graceful shutdown
     this.setupGracefulShutdown();
@@ -76,11 +104,19 @@ export class RuuviTrmnlApp {
 
   public async stop(): Promise<void> {
     if (!this.isRunning) {
-      console.log("ℹ️  App is not running");
+      if (this.useConsoleDisplay) {
+        this.updateConsoleDisplay("ℹ️  App is not running");
+      } else {
+        console.log("ℹ️  App is not running");
+      }
       return;
     }
 
-    console.log("🛑 Stopping RuuviTRMNL application...");
+    if (this.useConsoleDisplay) {
+      this.updateConsoleDisplay("🛑 Stopping RuuviTRMNL application...");
+    } else {
+      console.log("🛑 Stopping RuuviTRMNL application...");
+    }
 
     // Clear interval
     if (this.intervalId) {
@@ -92,31 +128,58 @@ export class RuuviTrmnlApp {
     await this.ruuviCollector.stopScanning();
 
     // Save cache before shutting down
-    console.log("📁 Saving cache before shutdown...");
+    if (this.useConsoleDisplay) {
+      this.updateConsoleDisplay("📁 Saving cache before shutdown...");
+    } else {
+      console.log("📁 Saving cache before shutdown...");
+    }
     await this.ruuviCollector.saveCache();
 
     this.isRunning = false;
+    
+    // Stop console display if enabled
+    if (this.useConsoleDisplay) {
+      this.consoleDisplay.stop();
+    }
+    
     console.log("✅ RuuviTRMNL application stopped");
+  }
+
+  private updateConsoleDisplay(message?: string, isError: boolean = false): void {
+    const tags = this.ruuviCollector.getAllConfiguredTags();
+    const collectorStats = this.ruuviCollector.getStats();
+    const cacheStats = this.ruuviCollector.getCacheStats();
+    const webhookInfo = this.trmnlSender.getWebhookInfo();
+
+    const status: Partial<AppStatus> = {
+      isRunning: this.isRunning,
+      startTime: this.startTime,
+      lastUpdateTime: new Date(),
+      collectorStats,
+      cacheStats,
+      webhookInfo,
+      tags
+    };
+
+    if (this.lastSentTime > 0) {
+      status.lastSentTime = new Date(this.lastSentTime);
+      status.nextSendTime = new Date(this.lastSentTime + this.minSendInterval);
+    }
+
+    if (isError && message) {
+      status.lastError = message;
+    }
+
+    this.consoleDisplay.updateStatus(status);
   }
 
   private async sendDataCycle(): Promise<void> {
     try {
-      // Get cache statistics
-      const cacheStats = this.ruuviCollector.getCacheStats();
-      const collectorStats = this.ruuviCollector.getStats();
-
-      console.log(
-        `\n📊 Data cycle - Total discovered: ${collectorStats.totalDiscovered}, ` +
-          `Allowed tags: ${cacheStats.allowedTags}, Pending send: ${cacheStats.pendingSend}`
-      );
-
       // Check if any configured tags have changed
       const hasChanges = this.ruuviCollector.hasChangedConfiguredTags();
 
       if (!hasChanges) {
-        console.log(
-          "ℹ️  No changed data for configured tags, skipping TRMNL update"
-        );
+        this.updateConsoleDisplay();
         return;
       }
 
@@ -125,12 +188,7 @@ export class RuuviTrmnlApp {
       const timeSinceLastSend = now - this.lastSentTime;
 
       if (this.lastSentTime > 0 && timeSinceLastSend < this.minSendInterval) {
-        const waitTime = Math.ceil(
-          (this.minSendInterval - timeSinceLastSend) / 60000
-        );
-        console.log(
-          `⏰ Rate limited: Must wait ${waitTime} more minutes before next send`
-        );
+        this.updateConsoleDisplay();
         return;
       }
 
@@ -184,50 +242,27 @@ export class RuuviTrmnlApp {
         }
       }
 
-      console.log(
-        `📤 Sending ${completeDataset.length} sensor readings to TRMNL (all configured sensors)`
-      );
-
       // Send to TRMNL
       const success = await this.trmnlSender.sendRuuviData(completeDataset);
 
       if (success) {
         this.lastSentTime = now; // Update last sent time
 
-        console.log(
-          `✅ Successfully sent ${completeDataset.length} readings to TRMNL`
-        );
-
         // Mark all existing tags as sent in cache (not placeholders)
         const existingTagIds = existingTags.map((tag) => tag.id);
         this.ruuviCollector.markTagsAsSent(existingTagIds);
-
-        this.logDataSummary(completeDataset);
-      } else {
-        console.error("❌ Failed to send data to TRMNL");
       }
+
+      // Update display with latest status
+      this.updateConsoleDisplay();
+      
     } catch (error) {
-      console.error(
-        "❌ Error in data cycle:",
-        error instanceof Error ? error.message : error
-      );
+      this.updateConsoleDisplay(`Error in data cycle: ${error instanceof Error ? error.message : error}`, true);
     }
-  }
-
-  private logDataSummary(tagData: RuuviTagData[]): void {
-    console.log("📋 Data summary:");
-    tagData.forEach((tag) => {
-      const temp = tag.temperature?.toFixed(1) ?? "N/A";
-      const humidity = tag.humidity?.toFixed(0) ?? "N/A";
-      const battery = tag.battery ? `${tag.battery.toFixed(2)}V` : "N/A";
-
-      console.log(`   ${tag.name}: ${temp}°C, ${humidity}%, ${battery}`);
-    });
   }
 
   private setupGracefulShutdown(): void {
     const shutdown = async (signal: string) => {
-      console.log(`\n🔄 Received ${signal}, shutting down gracefully...`);
       await this.stop();
       process.exit(0);
     };
@@ -262,13 +297,9 @@ export class RuuviTrmnlApp {
 
 // Main execution
 async function main(): Promise<void> {
-  console.log("🏷️  RuuviTRMNL - RuuviTag to TRMNL E-ink Display Bridge");
-  console.log("📅 Starting at:", new Date().toLocaleString());
-
   try {
     // Validate configuration
     const config = configManager.getConfig();
-    console.log("⚙️  Configuration loaded successfully");
 
     if (!configManager.getTrmnlWebhookUrl()) {
       throw new Error(
@@ -280,7 +311,6 @@ async function main(): Promise<void> {
     const app = new RuuviTrmnlApp();
     await app.start();
 
-    console.log("\n🎯 Application running. Press Ctrl+C to stop.");
   } catch (error) {
     console.error(
       "💥 Failed to start application:",

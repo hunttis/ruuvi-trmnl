@@ -2,11 +2,13 @@ import { RuuviTrmnlApp } from "../src/app";
 import { configManager } from "../src/config";
 import { RuuviCollector } from "../src/ruuvi-collector";
 import { TrmnlWebhookSender } from "../src/trmnl-sender";
+import { ConsoleDisplay } from "../src/console-display";
 
 // Mock dependencies
 jest.mock("../src/config");
 jest.mock("../src/ruuvi-collector");
 jest.mock("../src/trmnl-sender");
+jest.mock("../src/console-display");
 
 const mockConfigManager = configManager as jest.Mocked<typeof configManager>;
 const MockRuuviCollector = RuuviCollector as jest.MockedClass<
@@ -95,7 +97,7 @@ describe("RuuviTrmnlApp", () => {
     MockRuuviCollector.mockImplementation(() => mockCollector);
     MockTrmnlWebhookSender.mockImplementation(() => mockSender);
 
-    app = new RuuviTrmnlApp();
+    app = new RuuviTrmnlApp(false); // Disable console display for tests
   });
 
   afterEach(async () => {

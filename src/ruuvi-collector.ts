@@ -83,15 +83,7 @@ export class RuuviCollector {
     this.tagData.set(tagId, updatedTag);
 
     // Update cache and check if data changed
-    const hasChanged = this.cacheManager.updateTagData(updatedTag);
-
-    // Log simplified update with change indicator
-    const temp = updatedTag.temperature?.toFixed(1) || "N/A";
-    const humidity = updatedTag.humidity?.toFixed(1) || "N/A";
-    const changeIndicator = hasChanged ? "🔄" : "📊";
-    console.log(
-      `${changeIndicator} ${updatedTag.name}: ${temp}°C, ${humidity}%`
-    );
+    this.cacheManager.updateTagData(updatedTag);
   }
 
   public startScanning(): void {
