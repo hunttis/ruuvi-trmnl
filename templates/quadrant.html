@@ -1,0 +1,34 @@
+<!--
+RuuviTRMNL Plugin Template - Quadrant Layout
+Minimal grid layout for quarter-screen displays
+Best for: Small corner displays, dashboard quadrants
+
+Data structure: Same as full layout
+-->
+
+<div class="layout layout--col gap--xsmall">
+  <span class="title title--xxsmall text--center">RuuviTags</span>
+  
+  <div class="layout layout--row layout--stretch-x gap--xsmall">
+    {% for tag in ruuvi_tags %}
+      <div class="layout layout--col stretch-x gap--xsmall border--1 rounded--xsmall padding--xsmall {% if tag.status == 'stale' or tag.status == 'offline' %}background--muted{% endif %}">
+        <span class="title title--xxxsmall text--center">{{ tag.name | truncate: 8 }}</span>
+        <span class="value value--small value--tnums text--center">
+          {% if tag.temperature %}{{ tag.temperature | round: 1 }}°{% else %}-°{% endif %}
+        </span>
+        <span class="value value--xsmall value--tnums text--center">
+          {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}-%{% endif %}
+        </span>
+        {% if tag.status == 'stale' or tag.status == 'offline' %}
+        <span class="label label--xxxsmall text--center">{{ tag.status | upcase | truncate: 3 }}</span>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  
+  {% if lastRefresh %}
+  <span class="label label--xxxsmall text--center">
+    {{ lastRefresh | date: '%H:%M' }}
+  </span>
+  {% endif %}
+</div>

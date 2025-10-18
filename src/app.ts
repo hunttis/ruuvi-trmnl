@@ -123,9 +123,11 @@ export class RuuviTrmnlApp {
       // Check rate limiting (5 minutes between sends)
       const now = Date.now();
       const timeSinceLastSend = now - this.lastSentTime;
-      
+
       if (this.lastSentTime > 0 && timeSinceLastSend < this.minSendInterval) {
-        const waitTime = Math.ceil((this.minSendInterval - timeSinceLastSend) / 60000);
+        const waitTime = Math.ceil(
+          (this.minSendInterval - timeSinceLastSend) / 60000
+        );
         console.log(
           `⏰ Rate limited: Must wait ${waitTime} more minutes before next send`
         );
@@ -136,34 +138,34 @@ export class RuuviTrmnlApp {
       const config = configManager.getConfig();
       const allConfiguredTagIds = Object.keys(config.ruuvi.tagAliases);
       const existingTags = this.ruuviCollector.getAllConfiguredTags();
-      
+
       // Create map of existing data by short ID
       const existingDataMap = new Map<string, RuuviTagData>();
-      existingTags.forEach(tag => {
+      existingTags.forEach((tag) => {
         existingDataMap.set(tag.id, tag);
       });
 
       // Build complete dataset including placeholders for missing sensors
       const completeDataset: RuuviTagData[] = [];
-      
+
       for (const shortId of allConfiguredTagIds) {
         const aliasName = config.ruuvi.tagAliases[shortId] || `Tag ${shortId}`;
-        
+
         if (existingDataMap.has(shortId)) {
           // Use existing data
           const existingTag = existingDataMap.get(shortId)!;
-          
+
           // Check if data is too stale
           const maxAge = config.ruuvi.dataRetentionTime;
           const age = now - new Date(existingTag.lastUpdated).getTime();
-          
+
           if (age > maxAge) {
             // Data is stale, create placeholder
             completeDataset.push({
               id: shortId,
               name: aliasName,
               lastUpdated: new Date().toISOString(),
-              status: "stale"
+              status: "stale",
               // temperature and humidity omitted - will show as "-" in template
             });
           } else {
@@ -176,7 +178,7 @@ export class RuuviTrmnlApp {
             id: shortId,
             name: aliasName,
             lastUpdated: new Date().toISOString(),
-            status: "offline"
+            status: "offline",
             // temperature and humidity omitted - will show as "-" in template
           });
         }
@@ -191,7 +193,7 @@ export class RuuviTrmnlApp {
 
       if (success) {
         this.lastSentTime = now; // Update last sent time
-        
+
         console.log(
           `✅ Successfully sent ${completeDataset.length} readings to TRMNL`
         );

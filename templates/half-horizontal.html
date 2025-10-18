@@ -1,0 +1,35 @@
+<!--
+RuuviTRMNL Plugin Template - Half Horizontal Layout
+Compact horizontal layout for half-width displays
+Best for: Half screen displays, side panels
+
+Data structure: Same as full layout
+-->
+
+<div class="layout layout--col gap--small">
+  <div class="layout layout--row layout--stretch-x">
+    <span class="title title--xsmall">RuuviTag Sensors</span>
+    <span class="label label--xxsmall">{{ totalTags }} tags</span>
+  </div>
+
+  {% for tag in ruuvi_tags %}
+    <div class="layout layout--row layout--stretch-x gap--small">
+      <span class="value value--small {% if tag.status == 'stale' or tag.status == 'offline' %}text--muted{% endif %}">{{ tag.name }}</span>
+      <span class="value value--small value--tnums">
+        {% if tag.temperature %}{{ tag.temperature | round: 1 }}°C{% else %}-°C{% endif %}
+      </span>
+      <span class="value value--small value--tnums">
+        {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}-%{% endif %}
+      </span>
+      {% if tag.status == 'stale' or tag.status == 'offline' %}
+      <span class="label label--xxsmall">{{ tag.status | upcase }}</span>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  {% if lastRefresh %}
+    <span class="label label--xxsmall text--center">
+      {{ lastRefresh | date: '%H:%M' }}
+    </span>
+  {% endif %}
+</div>

@@ -1,0 +1,43 @@
+<!--
+RuuviTRMNL Plugin Template - Half Vertical Layout
+Vertical compact layout for half-height displays
+Best for: Top/bottom half of screen, narrow displays
+
+Data structure: Same as full layout
+-->
+
+<div class="layout layout--col gap--xsmall">
+  <span class="title title--xsmall text--center">RuuviTag Sensors</span>
+  
+  {% for tag in ruuvi_tags %}
+    <div class="layout layout--col gap--xsmall {% if tag.status == 'stale' or tag.status == 'offline' %}background--muted{% endif %} padding--xsmall rounded--small">
+      <div class="layout layout--row layout--stretch-x">
+        <span class="title title--xxsmall">{{ tag.name }}</span>
+        {% if tag.status == 'stale' or tag.status == 'offline' %}
+        <span class="label label--xxxsmall">{{ tag.status | upcase }}</span>
+        {% endif %}
+      </div>
+      
+      <div class="layout layout--row gap--small">
+        <div class="layout layout--col">
+          <span class="value value--small value--tnums">
+            {% if tag.temperature %}{{ tag.temperature | round: 1 }}°{% else %}-°{% endif %}
+          </span>
+          <span class="label label--xxxsmall">Temp</span>
+        </div>
+        <div class="layout layout--col">
+          <span class="value value--small value--tnums">
+            {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}-%{% endif %}
+          </span>
+          <span class="label label--xxxsmall">Humid</span>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+
+  {% if lastRefresh %}
+    <span class="label label--xxxsmall text--center">
+      {{ lastRefresh | date: '%H:%M' }}
+    </span>
+  {% endif %}
+</div>
