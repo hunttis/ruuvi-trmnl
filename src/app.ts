@@ -9,6 +9,8 @@ export class RuuviTrmnlApp {
   private intervalId: NodeJS.Timeout | null = null;
   private isRunning = false;
   private readonly refreshInterval: number;
+  private lastSentTime: number = 0;
+  private readonly minSendInterval: number = 5 * 60 * 1000; // 5 minutes in milliseconds
 
   constructor() {
     this.ruuviCollector = new RuuviCollector();
@@ -108,58 +110,97 @@ export class RuuviTrmnlApp {
           `Allowed tags: ${cacheStats.allowedTags}, Pending send: ${cacheStats.pendingSend}`
       );
 
-      // Get only changed tags that are in tagAliases
-      const changedTags = this.ruuviCollector.getChangedTagsForSending();
+      // Check if any configured tags have changed
+      const hasChanges = this.ruuviCollector.hasChangedConfiguredTags();
 
-      if (changedTags.length === 0) {
+      if (!hasChanges) {
         console.log(
           "ℹ️  No changed data for configured tags, skipping TRMNL update"
         );
         return;
       }
 
-      // Filter out stale data if configured
-      const config = configManager.getConfig();
-      const maxAge = config.ruuvi.dataRetentionTime;
+      // Check rate limiting (5 minutes between sends)
       const now = Date.now();
-
-      const freshData = changedTags.filter((tag: RuuviTagData) => {
-        const age = now - new Date(tag.lastUpdated).getTime();
-        return age <= maxAge;
-      });
-
-      if (freshData.length === 0) {
+      const timeSinceLastSend = now - this.lastSentTime;
+      
+      if (this.lastSentTime > 0 && timeSinceLastSend < this.minSendInterval) {
+        const waitTime = Math.ceil((this.minSendInterval - timeSinceLastSend) / 60000);
         console.log(
-          `⚠️  All changed data is stale (older than ${
-            maxAge / 60000
-          } minutes), skipping TRMNL update`
+          `⏰ Rate limited: Must wait ${waitTime} more minutes before next send`
         );
         return;
       }
 
-      if (freshData.length < changedTags.length) {
-        console.log(
-          `⚠️  Filtered out ${
-            changedTags.length - freshData.length
-          } stale readings`
-        );
+      // Create complete dataset with all configured sensors
+      const config = configManager.getConfig();
+      const allConfiguredTagIds = Object.keys(config.ruuvi.tagAliases);
+      const existingTags = this.ruuviCollector.getAllConfiguredTags();
+      
+      // Create map of existing data by short ID
+      const existingDataMap = new Map<string, RuuviTagData>();
+      existingTags.forEach(tag => {
+        existingDataMap.set(tag.id, tag);
+      });
+
+      // Build complete dataset including placeholders for missing sensors
+      const completeDataset: RuuviTagData[] = [];
+      
+      for (const shortId of allConfiguredTagIds) {
+        const aliasName = config.ruuvi.tagAliases[shortId] || `Tag ${shortId}`;
+        
+        if (existingDataMap.has(shortId)) {
+          // Use existing data
+          const existingTag = existingDataMap.get(shortId)!;
+          
+          // Check if data is too stale
+          const maxAge = config.ruuvi.dataRetentionTime;
+          const age = now - new Date(existingTag.lastUpdated).getTime();
+          
+          if (age > maxAge) {
+            // Data is stale, create placeholder
+            completeDataset.push({
+              id: shortId,
+              name: aliasName,
+              lastUpdated: new Date().toISOString(),
+              status: "stale"
+              // temperature and humidity omitted - will show as "-" in template
+            });
+          } else {
+            // Use fresh data
+            completeDataset.push(existingTag);
+          }
+        } else {
+          // No data exists, create placeholder
+          completeDataset.push({
+            id: shortId,
+            name: aliasName,
+            lastUpdated: new Date().toISOString(),
+            status: "offline"
+            // temperature and humidity omitted - will show as "-" in template
+          });
+        }
       }
 
-      console.log(`📤 Sending ${freshData.length} changed readings to TRMNL`);
+      console.log(
+        `📤 Sending ${completeDataset.length} sensor readings to TRMNL (all configured sensors)`
+      );
 
       // Send to TRMNL
-      const success = await this.trmnlSender.sendRuuviData(freshData);
+      const success = await this.trmnlSender.sendRuuviData(completeDataset);
 
       if (success) {
+        this.lastSentTime = now; // Update last sent time
+        
         console.log(
-          `✅ Successfully sent ${freshData.length} readings to TRMNL`
+          `✅ Successfully sent ${completeDataset.length} readings to TRMNL`
         );
 
-        // Mark as sent in cache
-        const tagIds = freshData.map((tag) => tag.id);
-        this.ruuviCollector.markTagsAsSent(tagIds);
+        // Mark all existing tags as sent in cache (not placeholders)
+        const existingTagIds = existingTags.map((tag) => tag.id);
+        this.ruuviCollector.markTagsAsSent(existingTagIds);
 
-        this.logDataSummary(freshData);
+        this.logDataSummary(completeDataset);
       } else {
         console.error("❌ Failed to send data to TRMNL");
       }

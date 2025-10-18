@@ -18,6 +18,7 @@ export interface RuuviTagData {
   accelerationY?: number;
   accelerationZ?: number;
   lastUpdated: string;
+  lastTemperatureUpdate?: string; // Timestamp of most recent temperature reading
   status: "active" | "stale" | "offline";
 }
 

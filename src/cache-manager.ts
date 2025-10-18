@@ -122,6 +122,22 @@ export class CacheManager {
   }
 
   /**
+   * Get all tags for specific allowed tag IDs
+   */
+  public getAllTags(allowedTagIds: string[]): RuuviTagData[] {
+    const tags: RuuviTagData[] = [];
+
+    for (const [tagId, entry] of Object.entries(this.cache)) {
+      const shortId = tagId.substring(0, 8);
+      if (allowedTagIds.includes(shortId)) {
+        tags.push(entry.data);
+      }
+    }
+
+    return tags;
+  }
+
+  /**
    * Get cache statistics
    */
   public getCacheStats(): {

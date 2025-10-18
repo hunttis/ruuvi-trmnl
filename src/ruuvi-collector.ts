@@ -63,8 +63,10 @@ export class RuuviCollector {
     };
 
     // Only set defined values
-    if (rawData.temperature !== undefined)
+    if (rawData.temperature !== undefined) {
       updatedTag.temperature = rawData.temperature;
+      updatedTag.lastTemperatureUpdate = new Date().toISOString();
+    }
     if (rawData.humidity !== undefined) updatedTag.humidity = rawData.humidity;
     if (rawData.pressure !== undefined)
       updatedTag.pressure = rawData.pressure / 100; // Convert to hPa
@@ -178,6 +180,26 @@ export class RuuviCollector {
     const allowedTagIds = Object.keys(config.ruuvi.tagAliases);
 
     return this.cacheManager.getChangedTags(allowedTagIds);
+  }
+
+  /**
+   * Get all configured tags (from cache), regardless of change status
+   */
+  public getAllConfiguredTags(): RuuviTagData[] {
+    const config = configManager.getConfig();
+    const allowedTagIds = Object.keys(config.ruuvi.tagAliases);
+
+    return this.cacheManager.getAllTags(allowedTagIds);
+  }
+
+  /**
+   * Check if any configured tags have changed
+   */
+  public hasChangedConfiguredTags(): boolean {
+    const config = configManager.getConfig();
+    const allowedTagIds = Object.keys(config.ruuvi.tagAliases);
+
+    return this.cacheManager.getChangedTags(allowedTagIds).length > 0;
   }
 
   /**

@@ -55,13 +55,13 @@ Data structure from webhook:
           <div class="layout layout--col">
             <span class="value value--large value--tnums">
               {% if tag.temperature %}{{ tag.temperature | round: 1 }}°C{% else
-              %}--°C{% endif %}
+              %}-°C{% endif %}
             </span>
             <span class="label label--xsmall">Temperature</span>
           </div>
           <div class="layout layout--col">
             <span class="value value--large value--tnums">
-              {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}--%{%
+              {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}-%{%
               endif %}
             </span>
             <span class="label label--xsmall">Humidity</span>
@@ -71,7 +71,11 @@ Data structure from webhook:
         <!-- Additional metrics section removed - only showing temperature and humidity -->
 
         <!-- Last update timestamp -->
-        {% if tag.lastUpdated %}
+        {% if tag.lastTemperatureUpdate %}
+        <span class="description text--right">
+          Temp: {{ tag.lastTemperatureUpdate | date: '%H:%M' }}
+        </span>
+        {% elsif tag.lastUpdated %}
         <span class="description text--right">
           Updated: {{ tag.lastUpdated | date: '%H:%M' }}
         </span>
