@@ -5,64 +5,52 @@ This directory contains different layout templates for displaying RuuviTag senso
 ## Template Variants
 
 ### 1. Full Layout (`full.html`)
-**Best for: Full screen displays with detailed information**
-- Complete sensor information with names, values, and timestamps
-- Visual status indicators for stale/offline sensors
-- Large, readable text
-- Detailed last update timestamps
+
+**Best for: Full screen displays**
+
+- Column layout with sensors arranged horizontally
+- Extra large temperature values with large humidity
+- Center-aligned text for visual balance
+- Extra spacing between columns (gap--large)
+- Timestamps only shown when sensor quiet for 30+ minutes
 
 ### 2. Half Horizontal Layout (`half-horizontal.html`)
+
 **Best for: Half-width displays, side panels**
-- Compact horizontal rows
-- Essential data only (name, temperature, humidity)
+
+- Column layout with medium spacing
+- Large temperature values with medium humidity
+- Compact but readable design
 - Status indicators for offline sensors
-- Simplified timestamp display
 
 ### 3. Half Vertical Layout (`half-vertical.html`)
+
 **Best for: Half-height displays, narrow screens**
-- Stacked sensor cards
-- Abbreviated labels to save space
+
+- Column layout optimized for vertical space
+- Large temperature with small humidity
+- Truncated location names for space efficiency
 - Background highlighting for offline sensors
-- Ultra-compact design
 
 ### 4. Quadrant Layout (`quadrant.html`)
+
 **Best for: Quarter-screen displays, dashboard corners**
-- Minimal grid layout
-- Essential data only
-- Truncated names and labels
-- Maximum space efficiency
 
-## Data Structure
+- Ultra-compact column layout with medium spacing
+- Medium temperature with small humidity
+- Maximum space efficiency with truncated names
+- Essential data only with conditional timestamps
 
-All templates expect the same webhook data structure:
+## Key Features
 
-```json
-{
-  "merge_variables": {
-    "ruuvi_tags": [
-      {
-        "id": "a06bd66b",
-        "name": "Living Room", 
-        "temperature": 22.6,
-        "humidity": 45.2,
-        "lastTemperatureUpdate": "2025-10-18T10:30:00Z",
-        "lastUpdated": "2025-10-18T10:30:00Z",
-        "status": "active"  // or "stale", "offline"
-      }
-    ],
-    "lastRefresh": "2025-10-18T10:30:00Z",
-    "totalTags": 2
-  }
-}
-```
-
-## Features
-
-- **Missing data handling**: Shows "-" for temperature/humidity when sensors are offline
-- **Status indicators**: Visual cues for stale/offline sensors
-- **Responsive text sizes**: Appropriate for each layout size
-- **Time formatting**: Readable timestamps for last updates
-- **Error resilience**: Graceful handling of missing sensor data
+- **Column Layout**: All templates use vertical column arrangement with horizontal sensor distribution
+- **Increased Spacing**: More breathing room between columns (gap--medium or gap--large)
+- **Font Hierarchy**: Clear size progression from location names through temperature to humidity
+- **Center Alignment**: Text centered for better visual balance
+- **Conditional Timestamps**: Only shown when sensor has been quiet for 30+ minutes
+- **Missing Data Handling**: Shows "-" for temperature/humidity when sensors are offline
+- **Status Indicators**: Visual cues for stale/offline sensors
+- **No Global Timestamps**: Removed general refresh time displays
 
 ## Usage
 

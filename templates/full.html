@@ -1,90 +1,50 @@
 <!--
 RuuviTRMNL Plugin Template - Full Layout
-Displays temperature and humidity data from RuuviTag sensors
-Best for: Full screen displays with detailed information
-
-Data structure from webhook:
-{
-  "merge_variables": {
-    "ruuvi_tags": [
-      {
-        "id": "a06bd66b",
-        "name": "Living Room",
-        "temperature": 22.6,
-        "humidity": 45.2,
-        "lastTemperatureUpdate": "2025-10-18T...",
-        "lastUpdated": "2025-10-18T...",
-        "status": "active"
-      }
-    ],
-    "lastRefresh": "2025-10-18T...",
-    "totalTags": 2
-  }
-}
+Column layout with location/temperature in large font, humidity smaller
+Shows timestamps only when sensor quiet for 30+ minutes
 -->
 
-<div class="layout layout--col gap--medium">
-  <!-- Plugin Header -->
-  <div class="layout layout--row layout--stretch-x">
-    <span class="title title--small">RuuviTag Sensors</span>
-    <span class="label label--small text--right">
-      {{ totalTags }} tag{{ totalTags != 1 ? 's' : '' }}
-    </span>
-  </div>
+<div class="layout layout--row layout--stretch-x gap--large">
+  {% for tag in ruuvi_tags %}
+  <div
+    class="layout layout--col stretch-x gap--small text--center {% if tag.status == 'stale' or tag.status == 'offline' %}background--muted{% endif %} padding--medium rounded--medium"
+  >
+    <!-- Location Name - Large -->
+    <span class="title title--large">{{ tag.name }}</span>
 
-  <!-- Sensor List -->
-  <div class="layout layout--col gap--small">
-    {% for tag in ruuvi_tags %}
-    <div class="item {% if tag.status == 'stale' %}item--emphasis-1{% endif %}">
-      <div
-        class="meta {% if tag.status == 'stale' %}background--pattern-1{% endif %}"
-      ></div>
-      <div class="content">
-        <!-- Tag Name and Status -->
-        <div class="layout layout--row layout--stretch-x">
-          <span class="title title--small">{{ tag.name }}</span>
-          {% if tag.status == 'stale' or tag.status == 'offline' %}
-          <span class="label label--xxsmall label--underline">{{ tag.status | upcase }}</span>
-          {% endif %}
-        </div>
-
-        <!-- Temperature and Humidity (Main metrics) -->
-        <div class="layout layout--row gap--medium">
-          <div class="layout layout--col">
-            <span class="value value--large value--tnums">
-              {% if tag.temperature %}{{ tag.temperature | round: 1 }}°C{% else %}-°C{% endif %}
-            </span>
-            <span class="label label--xsmall">Temperature</span>
-          </div>
-          <div class="layout layout--col">
-            <span class="value value--large value--tnums">
-              {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}-%{% endif %}
-            </span>
-            <span class="label label--xsmall">Humidity</span>
-          </div>
-        </div>
-
-        <!-- Last update timestamp -->
-        {% if tag.lastTemperatureUpdate %}
-        <span class="description text--right">
-          Temp: {{ tag.lastTemperatureUpdate | date: '%H:%M' }}
-        </span>
-        {% elsif tag.lastUpdated %}
-        <span class="description text--right">
-          Updated: {{ tag.lastUpdated | date: '%H:%M' }}
-        </span>
-        {% endif %}
-      </div>
+    <!-- Temperature - Large -->
+    <div class="layout layout--col gap--xsmall">
+      <span class="value value--xxlarge value--tnums">
+        {% if tag.temperature %}{{ tag.temperature | round: 1 }}°C{% else
+        %}-°C{% endif %}
+      </span>
+      <!-- Show timestamp if sensor quiet for 30+ minutes -->
+      {% assign now = 'now' | date: '%s' %} {% assign lastUpdate =
+      tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%s' %} {%
+      assign minutesOld = now | minus: lastUpdate | divided_by: 60 %} {% if
+      minutesOld > 30 and tag.temperature %}
+      <span class="label label--xxsmall"
+        >{{ tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%H:%M'
+        }}</span
+      >
+      {% endif %}
     </div>
-    {% endfor %}
-  </div>
 
-  <!-- Footer with last refresh time -->
-  {% if lastRefresh %}
-  <div class="layout layout--row layout--center">
-    <span class="label label--xxsmall">
-      Last updated: {{ lastRefresh | date: '%H:%M on %b %d' }}
-    </span>
+    <!-- Humidity - Smaller -->
+    <div class="layout layout--col gap--xsmall">
+      <span class="value value--large value--tnums">
+        {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}-%{% endif
+        %}
+      </span>
+      <span class="label label--small">humidity</span>
+    </div>
+
+    <!-- Status if offline -->
+    {% if tag.status == 'stale' or tag.status == 'offline' %}
+    <span class="label label--small label--underline"
+      >{{ tag.status | upcase }}</span
+    >
+    {% endif %}
   </div>
-  {% endif %}
+  {% endfor %}
 </div>
