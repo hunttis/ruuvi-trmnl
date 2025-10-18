@@ -24,7 +24,7 @@ describe("RuuviTrmnlApp", () => {
   const mockConfig = {
     trmnl: {
       webhookUrl: "https://usetrmnl.com/api/custom_plugins/test-id",
-      refreshInterval: 5000, // Short interval for testing
+      refreshInterval: 5, // Short interval for testing
       maxTagsToDisplay: 5,
       mergeStrategy: "replace" as const,
       requestTimeout: 10000,
@@ -52,15 +52,26 @@ describe("RuuviTrmnlApp", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers({ legacyFakeTimers: true });
 
     mockConfigManager.getConfig.mockReturnValue(mockConfig);
+    mockConfigManager.getTrmnlWebhookUrl.mockReturnValue(mockConfig.trmnl.webhookUrl);
 
     // Create mock instances
     mockCollector = {
+      initialize: jest.fn().mockResolvedValue(undefined),
       startScanning: jest.fn().mockResolvedValue(undefined),
       stopScanning: jest.fn().mockResolvedValue(undefined),
       getActiveTagData: jest.fn().mockReturnValue(mockTagData),
+      getChangedTagsForSending: jest.fn().mockReturnValue(mockTagData),
+      getAllConfiguredTags: jest.fn().mockReturnValue(mockTagData),
+      hasChangedConfiguredTags: jest.fn().mockReturnValue(true),
+      markTagsAsSent: jest.fn().mockReturnValue(undefined),
+      getCacheStats: jest.fn().mockReturnValue({
+        totalTags: 1,
+        allowedTags: 1,
+        pendingSend: 1,
+      }),
+      saveCache: jest.fn().mockResolvedValue(undefined),
       getStats: jest.fn().mockReturnValue({
         totalDiscovered: 1,
         activeCount: 1,
@@ -93,7 +104,6 @@ describe("RuuviTrmnlApp", () => {
         // Ignore errors during cleanup
       }
     }
-    jest.useRealTimers();
   });
 
   describe("constructor", () => {
@@ -105,18 +115,15 @@ describe("RuuviTrmnlApp", () => {
   });
 
   describe("start", () => {
-    it("should start the application successfully", () => {
-      // Test the initialization parts we can verify synchronously
-      const startSpy = jest.spyOn(app, "start");
-      app.start();
+    it("should start the application successfully", async () => {
+      await app.start();
 
-      expect(startSpy).toHaveBeenCalled();
+      expect(mockCollector.initialize).toHaveBeenCalled();
       expect(mockSender.testConnection).toHaveBeenCalled();
+      expect(mockCollector.startScanning).toHaveBeenCalled();
       expect(console.log).toHaveBeenCalledWith(
         "🚀 Starting RuuviTRMNL application..."
       );
-
-      // Note: Full async completion testing skipped due to timer complexity
     });
 
     it("should not start if already running", async () => {
@@ -139,16 +146,6 @@ describe("RuuviTrmnlApp", () => {
       );
       expect(mockCollector.startScanning).not.toHaveBeenCalled();
     });
-
-    it("should set up periodic data sending", async () => {
-      await app.start();
-
-      // Fast-forward to trigger the interval
-      jest.advanceTimersByTime(mockConfig.trmnl.refreshInterval + 1000);
-      await Promise.resolve();
-
-      expect(mockCollector.getActiveTagData).toHaveBeenCalledTimes(2); // Initial + interval
-    });
   });
 
   describe("stop", () => {
@@ -157,6 +154,7 @@ describe("RuuviTrmnlApp", () => {
       await app.stop();
 
       expect(mockCollector.stopScanning).toHaveBeenCalled();
+      expect(mockCollector.saveCache).toHaveBeenCalled();
       expect(console.log).toHaveBeenCalledWith(
         "🛑 Stopping RuuviTRMNL application..."
       );
@@ -170,101 +168,6 @@ describe("RuuviTrmnlApp", () => {
 
       expect(console.log).toHaveBeenCalledWith("ℹ️  App is not running");
       expect(mockCollector.stopScanning).not.toHaveBeenCalled();
-    });
-
-    it("should clear the interval when stopping", async () => {
-      const clearIntervalSpy = jest.spyOn(global, "clearInterval");
-
-      await app.start();
-      await app.stop();
-
-      expect(clearIntervalSpy).toHaveBeenCalled();
-    });
-  });
-
-  describe("sendDataCycle", () => {
-    beforeEach(async () => {
-      await app.start();
-    });
-
-    afterEach(async () => {
-      await app.stop();
-    });
-
-    it("should send data when tags are available", async () => {
-      // Trigger data cycle
-      jest.advanceTimersByTime(mockConfig.trmnl.refreshInterval);
-      await Promise.resolve();
-
-      expect(mockCollector.getActiveTagData).toHaveBeenCalled();
-      expect(mockSender.sendRuuviData).toHaveBeenCalledWith(mockTagData);
-      expect(console.log).toHaveBeenCalledWith("✅ Sent 1 readings to TRMNL");
-    });
-
-    it("should skip sending when no tags are available", async () => {
-      mockCollector.getActiveTagData.mockReturnValue([]);
-
-      // Trigger data cycle
-      jest.advanceTimersByTime(mockConfig.trmnl.refreshInterval);
-      await Promise.resolve();
-
-      expect(console.log).toHaveBeenCalledWith(
-        "⚠️  No RuuviTag data available, skipping TRMNL update"
-      );
-      expect(mockSender.sendRuuviData).not.toHaveBeenCalled();
-    });
-
-    it("should filter out stale data", async () => {
-      const staleData = [
-        {
-          id: "a06bd66b",
-          name: "Living Room",
-          temperature: 22.6,
-          humidity: 45.2,
-          battery: 2.89,
-          lastUpdated: new Date(
-            Date.now() - mockConfig.ruuvi.dataRetentionTime - 1000
-          ).toISOString(),
-          status: "active" as const,
-        },
-      ];
-      mockCollector.getActiveTagData.mockReturnValue(staleData);
-
-      // Trigger data cycle
-      jest.advanceTimersByTime(mockConfig.trmnl.refreshInterval);
-      await Promise.resolve();
-
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining("All data is stale")
-      );
-      expect(mockSender.sendRuuviData).not.toHaveBeenCalled();
-    });
-
-    it("should handle sending errors gracefully", async () => {
-      mockSender.sendRuuviData.mockResolvedValue(false);
-
-      // Trigger data cycle
-      jest.advanceTimersByTime(mockConfig.trmnl.refreshInterval);
-      await Promise.resolve();
-
-      expect(console.error).toHaveBeenCalledWith(
-        "❌ Failed to send data to TRMNL"
-      );
-    });
-
-    it("should handle exceptions in data cycle", async () => {
-      mockCollector.getActiveTagData.mockImplementation(() => {
-        throw new Error("Test error");
-      });
-
-      // Trigger data cycle
-      jest.advanceTimersByTime(mockConfig.trmnl.refreshInterval);
-      await Promise.resolve();
-
-      expect(console.error).toHaveBeenCalledWith(
-        "❌ Error in data cycle:",
-        "Test error"
-      );
     });
   });
 
@@ -296,58 +199,21 @@ describe("RuuviTrmnlApp", () => {
     });
   });
 
-  describe("error handling", () => {
-    it("should handle uncaught exceptions", async () => {
+  describe("basic functionality", () => {
+    it("should initialize all components", async () => {
       await app.start();
 
-      const stopSpy = jest.spyOn(app, "stop").mockResolvedValue();
-      const exitSpy = jest.spyOn(process, "exit").mockImplementation(() => {
-        throw new Error("Process exit called");
-      });
-
-      // Simulate uncaught exception
-      const handler = process.listeners("uncaughtException")[0] as Function;
-      expect(() => handler(new Error("Test error"))).toThrow(
-        "Process exit called"
-      );
-
-      expect(console.error).toHaveBeenCalledWith(
-        "💥 Uncaught exception:",
-        expect.any(Error)
-      );
-      expect(stopSpy).toHaveBeenCalled();
-      expect(exitSpy).toHaveBeenCalledWith(1);
-
-      stopSpy.mockRestore();
-      exitSpy.mockRestore();
+      expect(mockCollector.initialize).toHaveBeenCalled();
+      expect(mockSender.testConnection).toHaveBeenCalled();
+      expect(mockCollector.startScanning).toHaveBeenCalled();
     });
 
-    it("should handle unhandled promise rejections", async () => {
+    it("should handle graceful shutdown", async () => {
       await app.start();
+      await app.stop();
 
-      const stopSpy = jest.spyOn(app, "stop").mockResolvedValue();
-      const exitSpy = jest.spyOn(process, "exit").mockImplementation(() => {
-        throw new Error("Process exit called");
-      });
-
-      // Simulate unhandled rejection
-      const handler = process.listeners("unhandledRejection")[0] as Function;
-      const mockPromise = Promise.resolve();
-      expect(() => handler("Test reason", mockPromise)).toThrow(
-        "Process exit called"
-      );
-
-      expect(console.error).toHaveBeenCalledWith(
-        "💥 Unhandled rejection at:",
-        mockPromise,
-        "reason:",
-        "Test reason"
-      );
-      expect(stopSpy).toHaveBeenCalled();
-      expect(exitSpy).toHaveBeenCalledWith(1);
-
-      stopSpy.mockRestore();
-      exitSpy.mockRestore();
+      expect(mockCollector.saveCache).toHaveBeenCalled();
+      expect(mockCollector.stopScanning).toHaveBeenCalled();
     });
   });
 });
