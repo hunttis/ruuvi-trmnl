@@ -115,10 +115,11 @@ export class TrmnlWebhookSender {
         };
       } else {
         const errorText = await response.text().catch(() => "Unknown error");
-        const errorMessage = response.status === 429 
-          ? `Rate limited - will retry later` 
-          : `HTTP ${response.status}: ${errorText}`;
-        
+        const errorMessage =
+          response.status === 429
+            ? `Rate limited - will retry later`
+            : `HTTP ${response.status}: ${errorText}`;
+
         return {
           success: false,
           error: errorMessage,

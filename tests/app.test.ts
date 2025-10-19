@@ -141,15 +141,15 @@ describe("RuuviTrmnlApp", () => {
       expect(mockSender.testConnection).not.toHaveBeenCalled();
     });
 
-    it("should fail to start if TRMNL connection test fails", async () => {
+    it("should continue starting even if TRMNL connection test fails", async () => {
       mockSender.testConnection.mockResolvedValue(false);
 
       await app.start();
 
-      expect(console.error).toHaveBeenCalledWith(
-        "❌ TRMNL connection test failed. Please check your webhook URL."
+      expect(console.warn).toHaveBeenCalledWith(
+        "⚠️ TRMNL connection test failed. Will try sending data anyway."
       );
-      expect(mockCollector.startScanning).not.toHaveBeenCalled();
+      expect(mockCollector.startScanning).toHaveBeenCalled();
     });
   });
 

@@ -8,6 +8,11 @@ global.console = {
   error: jest.fn(),
 };
 
+// Mock fetch globally to prevent any real network calls
+global.fetch = jest.fn().mockImplementation(() => {
+  throw new Error('Real fetch() call detected in tests! All HTTP requests must be mocked.');
+});
+
 // Mock process.exit to prevent tests from exiting
 const mockExit = jest
   .spyOn(process, "exit")
@@ -18,6 +23,11 @@ const mockExit = jest
 // Reset mocks before each test
 beforeEach(() => {
   jest.clearAllMocks();
+  
+  // Reset fetch mock to throw by default
+  (global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(() => {
+    throw new Error('Real fetch() call detected in tests! All HTTP requests must be mocked.');
+  });
 });
 
 export { mockExit };

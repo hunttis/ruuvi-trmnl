@@ -6,7 +6,7 @@ import { RuuviTagData } from "../src/types";
 jest.mock("../src/config");
 const mockConfigManager = configManager as jest.Mocked<typeof configManager>;
 
-// Mock fetch globally
+// Mock fetch globally - this prevents any real TRMNL API calls during testing
 global.fetch = jest.fn();
 const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
 
