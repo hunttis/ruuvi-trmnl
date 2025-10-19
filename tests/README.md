@@ -2,6 +2,8 @@
 
 Run tests with `npm test`.
 
+All TRMNL API calls are fully mocked - no real network requests are made during testing.
+
 ## Test Structure
 
 ```
