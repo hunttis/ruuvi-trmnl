@@ -49,10 +49,22 @@ export class TrmnlWebhookSender {
   }
 
   private formatPayload(tagData: RuuviTagData[]): TrmnlWebhookPayload {
+    // Filter to only include template-required fields
+    const filteredTags = tagData.map((tag) => ({
+      name: tag.name,
+      temperature: tag.temperature,
+      humidity: tag.humidity,
+      status: tag.status,
+      lastUpdated: tag.lastUpdated,
+      ...(tag.lastTemperatureUpdate && {
+        lastTemperatureUpdate: tag.lastTemperatureUpdate,
+      }),
+    }));
+
     const collectionData: RuuviCollectionData = {
-      ruuvi_tags: tagData,
+      ruuvi_tags: filteredTags,
       lastRefresh: new Date().toISOString(),
-      totalTags: tagData.length,
+      totalTags: filteredTags.length,
     };
 
     const payload: TrmnlWebhookPayload = {

@@ -21,7 +21,7 @@ export interface RuuviTagData {
 }
 
 export interface RuuviCollectionData {
-  ruuvi_tags: RuuviTagData[];
+  ruuvi_tags: any[];
   lastRefresh: string;
   totalTags: number;
   scanDuration?: number;

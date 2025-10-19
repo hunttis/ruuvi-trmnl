@@ -251,12 +251,15 @@ export class RuuviTrmnlApp {
         }
       }
 
+      // Filter data to only include template-required fields
+      const filteredDataset = this.filterTagDataForTemplate(completeDataset);
+
       // Store the data that will be sent for display
       this.lastSentData = {
         merge_variables: {
-          ruuvi_tags: completeDataset,
+          ruuvi_tags: filteredDataset,
           lastRefresh: new Date().toISOString(),
-          totalTags: completeDataset.length,
+          totalTags: filteredDataset.length,
         },
       };
 
@@ -308,6 +311,19 @@ export class RuuviTrmnlApp {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  private filterTagDataForTemplate(tags: RuuviTagData[]): any[] {
+    return tags.map((tag) => ({
+      name: tag.name,
+      temperature: tag.temperature,
+      humidity: tag.humidity,
+      status: tag.status,
+      lastUpdated: tag.lastUpdated,
+      ...(tag.lastTemperatureUpdate && {
+        lastTemperatureUpdate: tag.lastTemperatureUpdate,
+      }),
+    }));
+  }
+
   private async forceSendData(): Promise<void> {
     try {
       // Force send even if no changes and ignore time interval
@@ -351,12 +367,15 @@ export class RuuviTrmnlApp {
         }
       }
 
+      // Filter data to only include template-required fields
+      const filteredDataset = this.filterTagDataForTemplate(completeDataset);
+
       // Store the data that will be sent for display
       this.lastSentData = {
         merge_variables: {
-          ruuvi_tags: completeDataset,
+          ruuvi_tags: filteredDataset,
           lastRefresh: new Date().toISOString(),
-          totalTags: completeDataset.length,
+          totalTags: filteredDataset.length,
         },
       };
 
