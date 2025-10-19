@@ -21,7 +21,6 @@ export class RuuviCollector {
   }
 
   private setupRuuviListeners(): void {
-    // Listen for newly discovered tags
     ruuvi.on("found", (tag: RawRuuviTag) => {
       if (!this.discoveredTags.has(tag.id)) {
         this.discoveredTags.add(tag.id);
@@ -32,7 +31,6 @@ export class RuuviCollector {
           `🎯 Found RuuviTag: ${tagName} (${tag.id.substring(0, 8)}...)`
         );
 
-        // Initialize tag data
         this.tagData.set(tag.id, {
           id: tag.id.substring(0, 8),
           name: tagName,
@@ -40,14 +38,12 @@ export class RuuviCollector {
           status: "active",
         });
 
-        // Listen for data updates from this tag
         tag.on("updated", (data: RawRuuviData) => {
           this.updateTagData(tag.id, data);
         });
       }
     });
 
-    // Listen for warnings
     ruuvi.on("warning", (message: string) => {
       Logger.warn(`⚠️  RuuviTag warning: ${message}`);
     });
@@ -63,16 +59,15 @@ export class RuuviCollector {
       status: "active",
     };
 
-    // Only set defined values
     if (rawData.temperature !== undefined) {
       updatedTag.temperature = rawData.temperature;
       updatedTag.lastTemperatureUpdate = new Date().toISOString();
     }
     if (rawData.humidity !== undefined) updatedTag.humidity = rawData.humidity;
     if (rawData.pressure !== undefined)
-      updatedTag.pressure = rawData.pressure / 100; // Convert to hPa
+      updatedTag.pressure = rawData.pressure / 100;
     if (rawData.battery !== undefined)
-      updatedTag.battery = rawData.battery / 1000; // Convert to volts
+      updatedTag.battery = rawData.battery / 1000;
     if (rawData.rssi !== undefined) updatedTag.signal = rawData.rssi;
     if (rawData.accelerationX !== undefined)
       updatedTag.accelerationX = rawData.accelerationX;
@@ -82,8 +77,6 @@ export class RuuviCollector {
       updatedTag.accelerationZ = rawData.accelerationZ;
 
     this.tagData.set(tagId, updatedTag);
-
-    // Update cache and check if data changed
     this.cacheManager.updateTagData(updatedTag);
   }
 
@@ -95,15 +88,11 @@ export class RuuviCollector {
 
     this.isScanning = true;
     Logger.log("🔍 Starting RuuviTag scan...");
-
-    // The ruuvi library automatically starts scanning when we set up listeners
-    // So we don't need to explicitly call a start method
   }
 
   public stopScanning(): void {
     this.isScanning = false;
     Logger.log("⏹️  Stopping RuuviTag scan...");
-    // Note: node-ruuvitag doesn't have a clean stop method
   }
 
   public getActiveTagData(): RuuviTagData[] {
@@ -115,17 +104,14 @@ export class RuuviCollector {
       const lastUpdated = new Date(data.lastUpdated).getTime();
 
       if (lastUpdated < staleThreshold) {
-        // Mark as stale if no recent data
         this.tagData.set(tagId, { ...data, status: "stale" });
       }
 
-      // Include active and recently stale tags
       if (data.status !== "offline") {
         activeTags.push(data);
       }
     }
 
-    // Sort by last updated (most recent first) and limit results
     return activeTags
       .sort(
         (a, b) =>
@@ -165,43 +151,28 @@ export class RuuviCollector {
     }
   }
 
-  /**
-   * Get tags that have changed and are configured in tagAliases
-   */
   public getChangedTagsForSending(): RuuviTagData[] {
     const allowedTagIds = configManager.getOrderedTagIds();
 
     return this.cacheManager.getChangedTags(allowedTagIds);
   }
 
-  /**
-   * Get all configured tags (from cache), regardless of change status
-   */
   public getAllConfiguredTags(): RuuviTagData[] {
     const allowedTagIds = configManager.getOrderedTagIds();
 
     return this.cacheManager.getAllTags(allowedTagIds);
   }
 
-  /**
-   * Check if any configured tags have changed
-   */
   public hasChangedConfiguredTags(): boolean {
     const allowedTagIds = configManager.getOrderedTagIds();
 
     return this.cacheManager.getChangedTags(allowedTagIds).length > 0;
   }
 
-  /**
-   * Mark tags as sent to TRMNL
-   */
   public markTagsAsSent(tagIds: string[]): void {
     this.cacheManager.markTagsAsSent(tagIds);
   }
 
-  /**
-   * Get cache statistics
-   */
   public getCacheStats(): {
     totalTags: number;
     allowedTags: number;
@@ -212,9 +183,6 @@ export class RuuviCollector {
     return this.cacheManager.getCacheStatsForAllowedTags(allowedTagIds);
   }
 
-  /**
-   * Force save cache (useful for graceful shutdown)
-   */
   public async saveCache(): Promise<void> {
     await this.cacheManager.forceSave();
   }

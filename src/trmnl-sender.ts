@@ -50,19 +50,16 @@ export class TrmnlWebhookSender {
       ruuvi_tags: tagData,
       lastRefresh: new Date().toISOString(),
       totalTags: tagData.length,
-      // scanDuration is optional and not provided
     };
 
     const payload: TrmnlWebhookPayload = {
       merge_variables: collectionData,
     };
 
-    // Add merge strategy if not default
     if (this.mergeStrategy !== "replace") {
       payload.merge_strategy = this.mergeStrategy as "deep_merge" | "stream";
     }
 
-    // Log payload size for debugging
     const payloadSize = JSON.stringify(payload).length;
     Logger.log(
       `📦 Payload size: ${payloadSize} bytes (limit: 2KB for standard, 5KB for TRMNL+)`
@@ -96,18 +93,14 @@ export class TrmnlWebhookSender {
 
       clearTimeout(timeoutId);
 
-      // TRMNL typically returns 200 for success, even if the response body is minimal
       if (response.ok) {
-        // Try to parse response, but don't fail if it's empty or not JSON
         try {
           const jsonResponse = await response.text();
           if (jsonResponse.trim()) {
             const parsed = JSON.parse(jsonResponse);
             return { success: true, ...parsed };
           }
-        } catch {
-          // Ignore JSON parse errors for successful requests
-        }
+        } catch {}
 
         return {
           success: true,
@@ -146,7 +139,6 @@ export class TrmnlWebhookSender {
     try {
       Logger.log("🔍 Testing TRMNL webhook connection...");
 
-      // Send a minimal test payload
       const testPayload: TrmnlWebhookPayload = {
         merge_variables: {
           test: true,
@@ -178,7 +170,7 @@ export class TrmnlWebhookSender {
 
   public getWebhookInfo(): { url: string; strategy: string; timeout: number } {
     return {
-      url: this.webhookUrl.replace(/\/[^\/]+$/, "/***"), // Hide UUID for security
+      url: this.webhookUrl.replace(/\/[^\/]+$/, "/***"),
       strategy: this.mergeStrategy,
       timeout: this.requestTimeout,
     };

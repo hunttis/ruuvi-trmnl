@@ -31,7 +31,6 @@ class ConfigManager {
     }
 
     try {
-      // Try to load the actual config file
       if (fs.existsSync(this.configPath)) {
         const configData = fs.readFileSync(this.configPath, "utf8");
         this.config = JSON.parse(configData);
@@ -73,7 +72,6 @@ class ConfigManager {
 
   public getTagAlias(tagId: string): string {
     const config = this.getConfig();
-    // Try full MAC address first, then fall back to shortened version
     const fullId = tagId.replace(/:/g, "").toLowerCase();
     const shortId = tagId.substring(0, 8);
     return (
@@ -87,12 +85,10 @@ class ConfigManager {
     const config = this.getConfig();
     const allTagIds = Object.keys(config.ruuvi.tagAliases);
 
-    // If displayOrder is configured, use it to order tags
     if (config.ruuvi.displayOrder && config.ruuvi.displayOrder.length > 0) {
       const orderedIds: string[] = [];
       const remainingIds = new Set(allTagIds);
 
-      // Add tags in the specified order
       for (const tagId of config.ruuvi.displayOrder) {
         if (remainingIds.has(tagId)) {
           orderedIds.push(tagId);
@@ -100,16 +96,12 @@ class ConfigManager {
         }
       }
 
-      // Add any remaining tags that weren't in displayOrder
       orderedIds.push(...Array.from(remainingIds));
-
       return orderedIds;
     }
 
-    // If no displayOrder, return tags in their natural order (Object.keys order)
     return allTagIds;
   }
 }
 
-// Export singleton instance
 export const configManager = new ConfigManager();

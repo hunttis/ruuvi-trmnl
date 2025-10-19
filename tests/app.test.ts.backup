@@ -1,0 +1,488 @@
+import { RuuviTrmnlApp } from "../src/app";
+import { configManager } from "../src/config";
+import { RuuviCollector } from "../src/ruuvi-collector";
+import { TrmnlWebhookSender } from "../src/trmnl-sender";
+import { ConsoleDisplay } from "../src/console-display";
+
+// Mock dependencies
+jest.mock("../src/config");
+jest.mock("../src/ruuvi-collector");
+jest.mock("../src/trmnl-sender");
+jest.mock("../src/console-display");
+
+const mockConfigManager = configManager as jest.Mocked<typeof configManager>;
+const MockRuuviCollector = RuuviCollector as jest.MockedClass<
+  typeof RuuviCollector
+>;
+const MockTrmnlWebhookSender = TrmnlWebhookSender as jest.MockedClass<
+  typeof TrmnlWebhookSender
+>;
+
+describe("RuuviTrmnlApp", () => {
+  let mockCollector: jest.Mocked<RuuviCollector>;
+  let mockSender: jest.Mocked<TrmnlWebhookSender>;
+
+  const mockConfig = {
+    trmnl: {
+      webhookUrl: "https://usetrmnl.com/api/custom_plugins/test-id",
+      refreshInterval: 5,
+      maxTagsToDisplay: 5,
+      mergeStrategy: "replace" as const,
+      requestTimeout: 10000,
+    },
+    ruuvi: {
+      scanTimeout: 5000,
+      dataRetentionTime: 300000,
+      tagAliases: {
+        a06bd66b: "Living Room",
+      },
+    },
+  };
+
+  const mockTagData = [
+    {
+      id: "a06bd66b",
+      name: "Living Room",
+      temperature: 22.6,
+      humidity: 45.2,
+      battery: 2.89,
+      lastUpdated: new Date().toISOString(),
+      status: "active" as const,
+    },
+  ];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    mockConfigManager.getConfig.mockReturnValue(mockConfig);
+    mockConfigManager.getTrmnlWebhookUrl.mockReturnValue(
+      mockConfig.trmnl.webhookUrl
+    );
+    mockConfigManager.getOrderedTagIds.mockReturnValue(["a06bd66b"]);
+
+    // Create mock instances with minimal functionality
+    mockCollector = {
+      initialize: jest.fn().mockResolvedValue(undefined),
+      startScanning: jest.fn().mockResolvedValue(undefined),
+      stopScanning: jest.fn().mockResolvedValue(undefined),
+      getActiveTagData: jest.fn().mockReturnValue(mockTagData),
+      getChangedTagsForSending: jest.fn().mockReturnValue([]),
+      getAllConfiguredTags: jest.fn().mockReturnValue(mockTagData),
+      hasChangedConfiguredTags: jest.fn().mockReturnValue(false),
+      markTagsAsSent: jest.fn().mockReturnValue(undefined),
+      getCacheStats: jest.fn().mockReturnValue({
+        totalTags: 1,
+        allowedTags: 1,
+        pendingSend: 0,
+      }),
+      saveCache: jest.fn().mockResolvedValue(undefined),
+      getStats: jest.fn().mockReturnValue({
+        totalDiscovered: 1,
+        activeCount: 1,
+        staleCount: 0,
+      }),
+    } as any;
+
+    mockSender = {
+      testConnection: jest.fn().mockResolvedValue(true),
+      sendRuuviData: jest.fn().mockResolvedValue(true),
+      getWebhookInfo: jest.fn().mockReturnValue({
+        url: "https://usetrmnl.com/api/custom_plugins/***",
+        strategy: "replace",
+        timeout: 10000,
+      }),
+    } as any;
+
+    MockRuuviCollector.mockImplementation(() => mockCollector);
+    MockTrmnlWebhookSender.mockImplementation(() => mockSender);
+  });
+
+  describe("constructor", () => {
+    it("should create instances of collector and sender", () => {
+      const app = new RuuviTrmnlApp(false);
+      
+      expect(MockRuuviCollector).toHaveBeenCalled();
+      expect(MockTrmnlWebhookSender).toHaveBeenCalled();
+      expect(mockConfigManager.getConfig).toHaveBeenCalled();
+    });
+  });
+
+  describe("status", () => {
+    it("should return initial status when not running", () => {
+      const app = new RuuviTrmnlApp(false);
+      const status = app.getStatus();
+
+      expect(status).toHaveProperty("running");
+      expect(status).toHaveProperty("stats");
+      expect(status).toHaveProperty("webhookInfo");
+      expect(status.running).toBe(false);
+    });
+  });
+
+  describe("stop", () => {
+    it("should handle stop when not running", async () => {
+      const app = new RuuviTrmnlApp(false);
+      
+      await app.stop();
+
+      expect(console.log).toHaveBeenCalledWith("ℹ️  App is not running");
+      expect(mockCollector.stopScanning).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("mocking verification", () => {
+    it("should verify all mocks are working", () => {
+      const app = new RuuviTrmnlApp(false);
+      
+      expect(mockCollector.getStats()).toEqual({
+        totalDiscovered: 1,
+        activeCount: 1,
+        staleCount: 0,
+      });
+      
+      expect(mockSender.getWebhookInfo()).toEqual({
+        url: "https://usetrmnl.com/api/custom_plugins/***",
+        strategy: "replace",
+        timeout: 10000,
+      });
+    });
+
+    it("should verify configuration mocking", () => {
+      const app = new RuuviTrmnlApp(false);
+      
+      expect(mockConfigManager.getConfig).toHaveBeenCalled();
+      expect(mockConfigManager.getTrmnlWebhookUrl()).toBe(
+        "https://usetrmnl.com/api/custom_plugins/test-id"
+      );
+    });
+
+    it("should verify collector mocking", async () => {
+      const app = new RuuviTrmnlApp(false);
+      
+      await expect(mockCollector.initialize()).resolves.toBeUndefined();
+      await expect(mockCollector.startScanning()).resolves.toBeUndefined();
+      await expect(mockCollector.stopScanning()).resolves.toBeUndefined();
+      await expect(mockCollector.saveCache()).resolves.toBeUndefined();
+      
+      expect(mockCollector.getActiveTagData()).toEqual(mockTagData);
+      expect(mockCollector.hasChangedConfiguredTags()).toBe(false);
+    });
+
+    it("should verify sender mocking", async () => {
+      const app = new RuuviTrmnlApp(false);
+      
+      await expect(mockSender.testConnection()).resolves.toBe(true);
+      await expect(mockSender.sendRuuviData(mockTagData)).resolves.toBe(true);
+    });
+  });
+
+  describe("integration", () => {
+    it("should create app and verify component integration", () => {
+      const app = new RuuviTrmnlApp(false);
+      const status = app.getStatus();
+      
+      // Verify app creates expected state
+      expect(status.running).toBe(false);
+      expect(status.stats).toEqual({
+        totalDiscovered: 1,
+        activeCount: 1,
+        staleCount: 0,
+      });
+      expect(status.webhookInfo).toEqual({
+        url: "https://usetrmnl.com/api/custom_plugins/***",
+        strategy: "replace",
+        timeout: 10000,
+      });
+    });
+
+    it("should handle configuration properly", () => {
+      const app = new RuuviTrmnlApp(false);
+      
+      expect(mockConfigManager.getConfig).toHaveBeenCalled();
+      expect(MockRuuviCollector).toHaveBeenCalled();
+      expect(MockTrmnlWebhookSender).toHaveBeenCalled();
+    });
+
+    it("should provide component access through status", () => {
+      const app = new RuuviTrmnlApp(false);
+      const status = app.getStatus();
+      
+      // Verify we can access underlying component stats
+      expect(status.stats).toBeDefined();
+      expect(status.webhookInfo).toBeDefined();
+      expect(typeof status.running).toBe('boolean');
+    });
+  });
+});
+
+describe("RuuviTrmnlApp", () => {
+  let app: RuuviTrmnlApp;
+  let mockCollector: jest.Mocked<RuuviCollector>;
+  let mockSender: jest.Mocked<TrmnlWebhookSender>;
+
+  const mockConfig = {
+    trmnl: {
+      webhookUrl: "https://usetrmnl.com/api/custom_plugins/test-id",
+      refreshInterval: 5, // Short interval for testing
+      maxTagsToDisplay: 5,
+      mergeStrategy: "replace" as const,
+      requestTimeout: 10000,
+    },
+    ruuvi: {
+      scanTimeout: 5000,
+      dataRetentionTime: 300000,
+      tagAliases: {
+        a06bd66b: "Living Room",
+      },
+    },
+  };
+
+  beforeAll(() => {
+    // Use fake timers for all tests
+    jest.useFakeTimers();
+  });
+
+  afterAll(() => {
+    // Restore real timers after all tests
+    jest.useRealTimers();
+  });
+
+  const mockTagData = [
+    {
+      id: "a06bd66b",
+      name: "Living Room",
+      temperature: 22.6,
+      humidity: 45.2,
+      battery: 2.89,
+      lastUpdated: new Date().toISOString(),
+      status: "active" as const,
+    },
+  ];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.clearAllTimers();
+
+    mockConfigManager.getConfig.mockReturnValue(mockConfig);
+    mockConfigManager.getTrmnlWebhookUrl.mockReturnValue(
+      mockConfig.trmnl.webhookUrl
+    );
+    mockConfigManager.getOrderedTagIds.mockReturnValue(["a06bd66b"]);
+
+    // Create mock instances
+    mockCollector = {
+      initialize: jest.fn().mockResolvedValue(undefined),
+      startScanning: jest.fn().mockResolvedValue(undefined),
+      stopScanning: jest.fn().mockResolvedValue(undefined),
+      getActiveTagData: jest.fn().mockReturnValue(mockTagData),
+      getChangedTagsForSending: jest.fn().mockReturnValue(mockTagData),
+      getAllConfiguredTags: jest.fn().mockReturnValue(mockTagData),
+      hasChangedConfiguredTags: jest.fn().mockReturnValue(true),
+      markTagsAsSent: jest.fn().mockReturnValue(undefined),
+      getCacheStats: jest.fn().mockReturnValue({
+        totalTags: 1,
+        allowedTags: 1,
+        pendingSend: 1,
+      }),
+      saveCache: jest.fn().mockResolvedValue(undefined),
+      getStats: jest.fn().mockReturnValue({
+        totalDiscovered: 1,
+        activeCount: 1,
+        staleCount: 0,
+      }),
+    } as any;
+
+    mockSender = {
+      testConnection: jest.fn().mockResolvedValue(true),
+      sendRuuviData: jest.fn().mockResolvedValue(true),
+      getWebhookInfo: jest.fn().mockReturnValue({
+        url: "https://usetrmnl.com/api/custom_plugins/***",
+        strategy: "replace",
+        timeout: 10000,
+      }),
+    } as any;
+
+    MockRuuviCollector.mockImplementation(() => mockCollector);
+    MockTrmnlWebhookSender.mockImplementation(() => mockSender);
+
+    app = new RuuviTrmnlApp(false); // Disable console display for tests
+  });
+
+  afterEach(async () => {
+    // Stop the app if it's running to clean up intervals
+    if (app) {
+      try {
+        await app.stop();
+      } catch (error) {
+        // Ignore errors during cleanup
+      }
+    }
+    // Clear all remaining timers
+    jest.clearAllTimers();
+    jest.runOnlyPendingTimers();
+  });
+
+  describe("constructor", () => {
+    it("should create instances of collector and sender", () => {
+      expect(MockRuuviCollector).toHaveBeenCalled();
+      expect(MockTrmnlWebhookSender).toHaveBeenCalled();
+      expect(mockConfigManager.getConfig).toHaveBeenCalled();
+    });
+  });
+
+  describe("start", () => {
+    it("should start the application successfully", async () => {
+      const startPromise = app.start();
+      
+      // Fast-forward through the initial delay
+      jest.advanceTimersByTime(3000);
+      
+      await startPromise;
+
+      expect(mockCollector.initialize).toHaveBeenCalled();
+      expect(mockSender.testConnection).toHaveBeenCalled();
+      expect(mockCollector.startScanning).toHaveBeenCalled();
+      expect(console.log).toHaveBeenCalledWith(
+        "🚀 Starting RuuviTRMNL application..."
+      );
+    });
+
+    it("should not start if already running", async () => {
+      const startPromise = app.start();
+      jest.advanceTimersByTime(3000);
+      await startPromise;
+      
+      jest.clearAllMocks();
+
+      await app.start();
+
+      expect(console.log).toHaveBeenCalledWith("⚠️  App is already running");
+      expect(mockSender.testConnection).not.toHaveBeenCalled();
+    });
+
+    it("should continue starting even if TRMNL connection test fails", async () => {
+      mockSender.testConnection.mockResolvedValue(false);
+
+      const startPromise = app.start();
+      jest.advanceTimersByTime(3000);
+      await startPromise;
+
+      expect(console.warn).toHaveBeenCalledWith(
+        "⚠️ TRMNL connection test failed. Will try sending data anyway."
+      );
+      expect(mockCollector.startScanning).toHaveBeenCalled();
+    });
+  });
+
+  describe("stop", () => {
+    it("should stop the application", async () => {
+      const startPromise = app.start();
+      jest.advanceTimersByTime(3000);
+      await startPromise;
+      
+      await app.stop();
+
+      expect(mockCollector.stopScanning).toHaveBeenCalled();
+      expect(mockCollector.saveCache).toHaveBeenCalled();
+      expect(console.log).toHaveBeenCalledWith(
+        "🛑 Stopping RuuviTRMNL application..."
+      );
+      expect(console.log).toHaveBeenCalledWith(
+        "✅ RuuviTRMNL application stopped"
+      );
+    });
+
+    it("should not stop if not running", async () => {
+      await app.stop();
+
+      expect(console.log).toHaveBeenCalledWith("ℹ️  App is not running");
+      expect(mockCollector.stopScanning).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getStatus", () => {
+    it("should return current status", async () => {
+      const startPromise = app.start();
+      jest.advanceTimersByTime(3000);
+      await startPromise;
+
+      const status = app.getStatus();
+
+      expect(status).toEqual({
+        running: true,
+        stats: {
+          totalDiscovered: 1,
+          activeCount: 1,
+          staleCount: 0,
+        },
+        webhookInfo: {
+          url: "https://usetrmnl.com/api/custom_plugins/***",
+          strategy: "replace",
+          timeout: 10000,
+        },
+      });
+    });
+
+    it("should show not running when stopped", () => {
+      const status = app.getStatus();
+
+      expect(status.running).toBe(false);
+    });
+  });
+
+  describe("basic functionality", () => {
+    it("should initialize all components", async () => {
+      const startPromise = app.start();
+      jest.advanceTimersByTime(3000);
+      await startPromise;
+
+      expect(mockCollector.initialize).toHaveBeenCalled();
+      expect(mockSender.testConnection).toHaveBeenCalled();
+      expect(mockCollector.startScanning).toHaveBeenCalled();
+    });
+
+    it("should handle graceful shutdown", async () => {
+      const startPromise = app.start();
+      jest.advanceTimersByTime(3000);
+      await startPromise;
+      
+      await app.stop();
+
+      expect(mockCollector.saveCache).toHaveBeenCalled();
+      expect(mockCollector.stopScanning).toHaveBeenCalled();
+    });
+
+    it("should handle periodic data sending", async () => {
+      mockCollector.hasChangedConfiguredTags.mockReturnValue(true);
+      mockSender.sendRuuviData.mockResolvedValue(true);
+
+      const startPromise = app.start();
+      jest.advanceTimersByTime(3000);
+      await startPromise;
+
+      // Clear initial calls
+      jest.clearAllMocks();
+
+      // Advance time to trigger periodic sending (5 seconds configured)
+      jest.advanceTimersByTime(5000);
+
+      expect(mockCollector.hasChangedConfiguredTags).toHaveBeenCalled();
+    });
+
+    it("should not send data when no changes", async () => {
+      mockCollector.hasChangedConfiguredTags.mockReturnValue(false);
+
+      const startPromise = app.start();
+      jest.advanceTimersByTime(3000);
+      await startPromise;
+
+      jest.clearAllMocks();
+
+      // Advance time to trigger periodic check
+      jest.advanceTimersByTime(5000);
+
+      expect(mockCollector.hasChangedConfiguredTags).toHaveBeenCalled();
+      expect(mockSender.sendRuuviData).not.toHaveBeenCalled();
+    });
+  });
+});

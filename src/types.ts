@@ -1,11 +1,9 @@
-// TRMNL Webhook Types
 export interface TrmnlWebhookPayload {
   merge_variables: Record<string, any>;
   merge_strategy?: "replace" | "deep_merge" | "stream";
   stream_limit?: number;
 }
 
-// RuuviTag Data Types
 export interface RuuviTagData {
   id: string;
   name: string;
@@ -18,7 +16,7 @@ export interface RuuviTagData {
   accelerationY?: number;
   accelerationZ?: number;
   lastUpdated: string;
-  lastTemperatureUpdate?: string; // Timestamp of most recent temperature reading
+  lastTemperatureUpdate?: string;
   status: "active" | "stale" | "offline";
 }
 
@@ -29,14 +27,12 @@ export interface RuuviCollectionData {
   scanDuration?: number;
 }
 
-// HTTP Response Types
 export interface TrmnlWebhookResponse {
   success: boolean;
   message?: string;
   error?: string;
 }
 
-// Utility type for RuuviTag raw data from node-ruuvitag
 export interface RawRuuviData {
   url?: string;
   temperature?: number;

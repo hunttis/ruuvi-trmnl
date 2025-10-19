@@ -22,9 +22,6 @@ export class CacheManager {
     this.cacheFilePath = path.join(process.cwd(), cacheFileName);
   }
 
-  /**
-   * Initialize the cache by loading from file
-   */
   public async initialize(): Promise<void> {
     if (this.initialized) {
       return;
@@ -41,9 +38,6 @@ export class CacheManager {
     this.initialized = true;
   }
 
-  /**
-   * Update tag data in cache and return whether data has changed
-   */
   public updateTagData(tagData: RuuviTagData): boolean {
     const tagId = tagData.id;
     const newHash = this.generateDataHash(tagData);
@@ -68,20 +62,15 @@ export class CacheManager {
     return hasChanged;
   }
 
-  /**
-   * Get tags that have changed since last sent and are in the allowed list
-   */
   public getChangedTags(allowedTagIds: string[]): RuuviTagData[] {
     const changedTagMap = new Map<string, RuuviTagData>();
 
     for (const [tagId, entry] of Object.entries(this.cache)) {
-      // Only include tags that are in the allowed list (tagAliases)
       const shortId = tagId.substring(0, 8);
       if (!allowedTagIds.includes(shortId)) {
         continue;
       }
 
-      // Check if data has changed since last sent
       const hasChangedSinceLastSent =
         !entry.lastSent ||
         new Date(entry.data.lastUpdated) > new Date(entry.lastSent);
@@ -90,8 +79,6 @@ export class CacheManager {
         changedTagMap.set(shortId, entry.data);
       }
     }
-
-    // Return tags in the order specified by allowedTagIds
     const changedTags: RuuviTagData[] = [];
     for (const tagId of allowedTagIds) {
       if (changedTagMap.has(tagId)) {
@@ -102,9 +89,6 @@ export class CacheManager {
     return changedTags;
   }
 
-  /**
-   * Mark tags as sent to TRMNL
-   */
   public markTagsAsSent(tagIds: string[]): void {
     const sentTime = new Date().toISOString();
 
@@ -114,7 +98,6 @@ export class CacheManager {
       }
     }
 
-    // Save to file after marking as sent
     this.saveToFile().catch((error) => {
       Logger.error(
         "❌ Failed to save cache after marking tags as sent:" + error
@@ -122,29 +105,20 @@ export class CacheManager {
     });
   }
 
-  /**
-   * Get all cached tag data (for debugging/status)
-   */
   public getAllCachedTags(): RuuviTagData[] {
     return Object.values(this.cache).map((entry) => entry.data);
   }
 
-  /**
-   * Get all tags for specific allowed tag IDs
-   */
   public getAllTags(allowedTagIds: string[]): RuuviTagData[] {
     const tags: RuuviTagData[] = [];
     const tagMap = new Map<string, RuuviTagData>();
 
-    // First, build a map of available tags
     for (const [tagId, entry] of Object.entries(this.cache)) {
       const shortId = tagId.substring(0, 8);
       if (allowedTagIds.includes(shortId)) {
         tagMap.set(shortId, entry.data);
       }
     }
-
-    // Then, add tags in the order specified by allowedTagIds
     for (const tagId of allowedTagIds) {
       if (tagMap.has(tagId)) {
         tags.push(tagMap.get(tagId)!);
@@ -154,9 +128,6 @@ export class CacheManager {
     return tags;
   }
 
-  /**
-   * Get cache statistics
-   */
   public getCacheStats(): {
     totalTags: number;
     pendingSend: number;
@@ -165,18 +136,14 @@ export class CacheManager {
   } {
     const totalTags = Object.keys(this.cache).length;
 
-    // This will need to be called with allowed tag IDs to get accurate pending count
     return {
       totalTags,
-      pendingSend: 0, // Will be calculated when called with allowed IDs
-      allowedTags: 0, // Will be calculated when called with allowed IDs
-      allowedTagIds: [], // Will be populated when called with allowed IDs
+      pendingSend: 0,
+      allowedTags: 0,
+      allowedTagIds: [],
     };
   }
 
-  /**
-   * Get cache statistics for specific allowed tags
-   */
   public getCacheStatsForAllowedTags(allowedTagIds: string[]): {
     totalTags: number;
     pendingSend: number;
@@ -204,9 +171,6 @@ export class CacheManager {
     return { totalTags, allowedTags, pendingSend };
   }
 
-  /**
-   * Persist cache to file
-   */
   private async saveToFile(): Promise<void> {
     try {
       const cacheData = {
@@ -226,9 +190,6 @@ export class CacheManager {
     }
   }
 
-  /**
-   * Load cache from file
-   */
   private async loadFromFile(): Promise<void> {
     try {
       const fileContent = await fs.promises.readFile(
@@ -245,7 +206,6 @@ export class CacheManager {
       }
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        // File doesn't exist, start with empty cache
         this.cache = {};
         return;
       }
@@ -254,11 +214,7 @@ export class CacheManager {
     }
   }
 
-  /**
-   * Generate a hash for tag data to detect changes
-   */
   private generateDataHash(tagData: RuuviTagData): string {
-    // Create a hash based on the meaningful data values
     const significantData = {
       temperature: tagData.temperature
         ? Math.round(tagData.temperature * 10) / 10
@@ -276,20 +232,13 @@ export class CacheManager {
       status: tagData.status,
     };
 
-    // Simple hash generation (good enough for change detection)
     return Buffer.from(JSON.stringify(significantData)).toString("base64");
   }
 
-  /**
-   * Force save cache (useful for shutdown)
-   */
   public async forceSave(): Promise<void> {
     await this.saveToFile();
   }
 
-  /**
-   * Clear cache (for testing or reset)
-   */
   public clearCache(): void {
     this.cache = {};
     this.saveToFile().catch((error) => {

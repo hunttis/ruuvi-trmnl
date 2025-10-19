@@ -28,7 +28,7 @@ export interface AppStatus {
 export class ConsoleDisplay {
   private displayInterval: NodeJS.Timeout | null = null;
   private status: AppStatus;
-  private readonly refreshRate = 2000; // Update display every 2 seconds
+  private readonly refreshRate = 2000;
   private lastOutput: string = "";
 
   constructor() {
@@ -42,18 +42,13 @@ export class ConsoleDisplay {
   }
 
   public start(): void {
-    // Clear screen and hide cursor
     process.stdout.write("\x1b[2J\x1b[H\x1b[?25l");
-
-    // Initial render
     this.render();
 
-    // Set up periodic refresh
     this.displayInterval = setInterval(() => {
       this.render();
     }, this.refreshRate);
 
-    // Handle graceful shutdown
     process.on("SIGINT", () => {
       this.stop();
       process.exit(0);
@@ -66,7 +61,6 @@ export class ConsoleDisplay {
       this.displayInterval = null;
     }
 
-    // Show cursor and add final newline
     process.stdout.write("\x1b[?25h\n");
   }
 
@@ -79,13 +73,11 @@ export class ConsoleDisplay {
     const width = process.stdout.columns || 120;
     const separator = "─".repeat(width);
 
-    // Header
     lines.push("");
     lines.push(this.centerText("🏷️ RuuviTRMNL Dashboard", width));
     lines.push("");
     lines.push(separator);
 
-    // Status section
     lines.push("");
     lines.push("📊 Application Status");
     lines.push(
@@ -104,7 +96,6 @@ export class ConsoleDisplay {
     );
     lines.push(`   Uptime: ${this.formatDuration(uptime)}`);
 
-    // TRMNL section
     lines.push("");
     lines.push("🔗 TRMNL Connection");
     lines.push(`   Webhook: ${this.status.webhookInfo.url}`);
@@ -128,7 +119,6 @@ export class ConsoleDisplay {
       }
     }
 
-    // Statistics section
     lines.push("");
     lines.push("📈 Statistics");
     lines.push(
@@ -139,7 +129,6 @@ export class ConsoleDisplay {
     lines.push(`   Configured Tags: ${this.status.cacheStats.allowedTags}`);
     lines.push(`   Pending Changes: ${this.status.cacheStats.pendingSend}`);
 
-    // Sensor data section
     if (this.status.tags && this.status.tags.length > 0) {
       lines.push("");
       lines.push("🌡️ Sensor Readings");
@@ -164,29 +153,23 @@ export class ConsoleDisplay {
       }
     }
 
-    // Error section
     if (this.status.lastError) {
       lines.push("");
       lines.push("❌ Latest Error");
       lines.push(`   ${this.status.lastError}`);
     }
 
-    // Footer
     lines.push("");
     lines.push(separator);
     lines.push(this.centerText("Press Ctrl+C to stop", width));
     lines.push("");
-
-    // Pad with empty lines to clear any previous longer output
     const targetLines = 30;
     while (lines.length < targetLines) {
       lines.push("");
     }
 
-    // Join output and only update if different
     const newOutput = lines.join("\n");
     if (newOutput !== this.lastOutput) {
-      // Clear screen and output new content
       process.stdout.write("\x1b[2J\x1b[H");
       process.stdout.write(newOutput);
       this.lastOutput = newOutput;
