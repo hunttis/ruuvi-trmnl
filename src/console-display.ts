@@ -21,6 +21,12 @@ export interface AppStatus {
     strategy: string;
     timeout: number;
   };
+  trmnlStats: {
+    totalSent: number;
+    lastResponseCode?: number;
+    lastResponseMessage?: string;
+  };
+  lastSentData?: any;
   tags?: RuuviTagData[];
   lastError?: string;
 }
@@ -30,6 +36,7 @@ export class ConsoleDisplay {
   private status: AppStatus;
   private readonly refreshRate = 2000;
   private lastOutput: string = "";
+  private onForceSend?: () => void;
 
   constructor() {
     this.status = {
@@ -38,7 +45,12 @@ export class ConsoleDisplay {
       collectorStats: { totalDiscovered: 0, activeCount: 0, staleCount: 0 },
       cacheStats: { totalTags: 0, allowedTags: 0, pendingSend: 0 },
       webhookInfo: { url: "", strategy: "replace", timeout: 10000 },
+      trmnlStats: { totalSent: 0 },
     };
+  }
+
+  public setForceSendCallback(callback: () => void): void {
+    this.onForceSend = callback;
   }
 
   public start(): void {
@@ -48,6 +60,27 @@ export class ConsoleDisplay {
     this.displayInterval = setInterval(() => {
       this.render();
     }, this.refreshRate);
+
+    // Enable raw mode for keyboard input
+    if (process.stdin.isTTY) {
+      process.stdin.setRawMode(true);
+      process.stdin.resume();
+      process.stdin.setEncoding("utf8");
+
+      process.stdin.on("data", (key: string) => {
+        // Handle spacebar (ASCII 32)
+        if (key === " ") {
+          if (this.onForceSend) {
+            this.onForceSend();
+          }
+        }
+        // Handle Ctrl+C (ASCII 3)
+        else if (key === "\u0003") {
+          this.stop();
+          process.exit(0);
+        }
+      });
+    }
 
     process.on("SIGINT", () => {
       this.stop();
@@ -61,6 +94,12 @@ export class ConsoleDisplay {
       this.displayInterval = null;
     }
 
+    // Restore terminal settings
+    if (process.stdin.isTTY) {
+      process.stdin.setRawMode(false);
+      process.stdin.pause();
+    }
+
     process.stdout.write("\x1b[?25h\n");
   }
 
@@ -69,14 +108,56 @@ export class ConsoleDisplay {
   }
 
   private render(): void {
-    const lines: string[] = [];
     const width = process.stdout.columns || 120;
+    const leftColumnWidth = Math.floor(width * 0.6);
+    const rightColumnWidth = width - leftColumnWidth - 3; // 3 for separator
     const separator = "─".repeat(width);
 
+    // Build left column content
+    const leftLines = this.buildLeftColumn(leftColumnWidth);
+
+    // Build right column content
+    const rightLines = this.buildRightColumn(rightColumnWidth);
+
+    // Combine columns
+    const lines: string[] = [];
     lines.push("");
     lines.push(this.centerText("🏷️ RuuviTRMNL Dashboard", width));
     lines.push("");
     lines.push(separator);
+
+    const maxLines = Math.max(leftLines.length, rightLines.length);
+    for (let i = 0; i < maxLines; i++) {
+      const leftLine = leftLines[i] || "";
+      const rightLine = rightLines[i] || "";
+      const paddedLeft = leftLine.padEnd(leftColumnWidth);
+      const paddedRight = rightLine.padEnd(rightColumnWidth);
+      lines.push(`${paddedLeft} │ ${paddedRight}`);
+    }
+
+    lines.push("");
+    lines.push(separator);
+    lines.push(
+      this.centerText("Press SPACE to force send • Ctrl+C to stop", width)
+    );
+    lines.push("");
+
+    // Ensure minimum height
+    const targetLines = 30;
+    while (lines.length < targetLines) {
+      lines.push("");
+    }
+
+    const newOutput = lines.join("\n");
+    if (newOutput !== this.lastOutput) {
+      process.stdout.write("\x1b[2J\x1b[H");
+      process.stdout.write(newOutput);
+      this.lastOutput = newOutput;
+    }
+  }
+
+  private buildLeftColumn(width: number): string[] {
+    const lines: string[] = [];
 
     lines.push("");
     lines.push("📊 Application Status");
@@ -100,10 +181,11 @@ export class ConsoleDisplay {
     lines.push("🔗 TRMNL Connection");
     lines.push(`   Webhook: ${this.status.webhookInfo.url}`);
     lines.push(`   Strategy: ${this.status.webhookInfo.strategy}`);
+    lines.push(`   Total Updates Sent: ${this.status.trmnlStats.totalSent}`);
 
     if (this.status.lastSentTime) {
       lines.push(
-        `   Last Sent: ${this.status.lastSentTime.toLocaleTimeString()}`
+        `   Last Sent to TRMNL: ${this.status.lastSentTime.toLocaleTimeString()}`
       );
     }
 
@@ -113,9 +195,25 @@ export class ConsoleDisplay {
         Math.floor((this.status.nextSendTime.getTime() - Date.now()) / 1000)
       );
       if (timeUntilNext > 0) {
-        lines.push(`   Next Available: ${this.formatDuration(timeUntilNext)}`);
+        lines.push(
+          `   Next Send Available: ${this.formatDuration(timeUntilNext)}`
+        );
       } else {
-        lines.push(`   Next Available: Now`);
+        lines.push(`   Next Send Available: Now`);
+      }
+    }
+
+    if (this.status.trmnlStats.lastResponseCode !== undefined) {
+      const responseIcon =
+        this.status.trmnlStats.lastResponseCode < 400 ? "✅" : "❌";
+      lines.push(
+        `   Last Response: ${responseIcon} HTTP ${this.status.trmnlStats.lastResponseCode}`
+      );
+
+      if (this.status.trmnlStats.lastResponseMessage) {
+        lines.push(
+          `   Response Message: ${this.status.trmnlStats.lastResponseMessage}`
+        );
       }
     }
 
@@ -146,9 +244,9 @@ export class ConsoleDisplay {
         const statusIcon = this.getStatusIcon(tag.status);
 
         lines.push(
-          `   ${statusIcon} ${tag.name.padEnd(15)} ${temp.padStart(
-            8
-          )} ${humidity.padStart(6)} ${battery.padStart(7)} (${age})`
+          `   ${statusIcon} ${tag.name.padEnd(12)} ${temp.padStart(
+            7
+          )} ${humidity.padStart(5)} ${battery.padStart(6)} (${age})`
         );
       }
     }
@@ -159,21 +257,47 @@ export class ConsoleDisplay {
       lines.push(`   ${this.status.lastError}`);
     }
 
+    return lines;
+  }
+
+  private buildRightColumn(width: number): string[] {
+    const lines: string[] = [];
+
     lines.push("");
-    lines.push(separator);
-    lines.push(this.centerText("Press Ctrl+C to stop", width));
-    lines.push("");
-    const targetLines = 30;
-    while (lines.length < targetLines) {
+    lines.push("📤 Latest TRMNL Data");
+
+    if (this.status.lastSentData) {
       lines.push("");
+      try {
+        const jsonString = JSON.stringify(this.status.lastSentData, null, 2);
+        const jsonLines = jsonString.split("\n");
+
+        for (const jsonLine of jsonLines) {
+          // Wrap long lines to fit in the column
+          if (jsonLine.length <= width - 3) {
+            lines.push(`   ${jsonLine}`);
+          } else {
+            // Break long lines
+            let remaining = jsonLine;
+            while (remaining.length > 0) {
+              const chunk = remaining.substring(0, width - 6);
+              lines.push(`   ${chunk}`);
+              remaining = remaining.substring(width - 6);
+            }
+          }
+        }
+      } catch (error) {
+        lines.push("   Error formatting JSON data");
+      }
+    } else {
+      lines.push("");
+      lines.push("   No data sent yet");
+      lines.push("");
+      lines.push("   Press SPACE to send current");
+      lines.push("   sensor data to TRMNL");
     }
 
-    const newOutput = lines.join("\n");
-    if (newOutput !== this.lastOutput) {
-      process.stdout.write("\x1b[2J\x1b[H");
-      process.stdout.write(newOutput);
-      this.lastOutput = newOutput;
-    }
+    return lines;
   }
 
   private centerText(text: string, width: number): string {

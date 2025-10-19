@@ -74,7 +74,8 @@ describe("TrmnlWebhookSender", () => {
 
       const result = await sender.sendRuuviData(mockTagData);
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.statusCode).toBe(200);
       expect(mockFetch).toHaveBeenCalledWith(
         mockConfig.trmnl.webhookUrl,
         expect.objectContaining({
@@ -103,7 +104,9 @@ describe("TrmnlWebhookSender", () => {
 
       const result = await sender.sendRuuviData(mockTagData);
 
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("HTTP 400: Invalid payload");
+      expect(result.statusCode).toBe(400);
       expect(console.error).toHaveBeenCalledWith(
         "❌ TRMNL webhook failed: HTTP 400: Invalid payload"
       );
@@ -114,7 +117,8 @@ describe("TrmnlWebhookSender", () => {
 
       const result = await sender.sendRuuviData(mockTagData);
 
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Network error");
       expect(console.error).toHaveBeenCalledWith(
         "❌ TRMNL webhook failed: Network error"
       );
@@ -236,6 +240,36 @@ describe("TrmnlWebhookSender", () => {
         strategy: "replace",
         timeout: 10000,
       });
+    });
+  });
+
+  describe("getTotalSent", () => {
+    it("should return 0 initially", () => {
+      expect(sender.getTotalSent()).toBe(0);
+    });
+
+    it("should increment total sent after successful send", async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: jest.fn().mockResolvedValue(""),
+      };
+      mockFetch.mockResolvedValue(mockResponse as any);
+
+      expect(sender.getTotalSent()).toBe(0);
+      await sender.sendRuuviData(mockTagData);
+      expect(sender.getTotalSent()).toBe(1);
+      await sender.sendRuuviData(mockTagData);
+      expect(sender.getTotalSent()).toBe(2);
+    });
+
+    it("should not increment total sent after failed send", async () => {
+      mockFetch.mockRejectedValue(new Error("Network error"));
+
+      expect(sender.getTotalSent()).toBe(0);
+      await sender.sendRuuviData(mockTagData);
+      expect(sender.getTotalSent()).toBe(0);
     });
   });
 });

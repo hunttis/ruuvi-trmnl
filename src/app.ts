@@ -16,6 +16,10 @@ export class RuuviTrmnlApp {
   private readonly minSendInterval: number = 5 * 60 * 1000;
   private startTime: Date = new Date();
   private readonly useConsoleDisplay: boolean;
+  private lastResponseCode: number | undefined;
+  private lastResponseMessage: string | undefined;
+  private isFirstSend: boolean = true;
+  private lastSentData: any = null;
 
   constructor(useConsoleDisplay: boolean = true) {
     this.ruuviCollector = new RuuviCollector();
@@ -25,6 +29,7 @@ export class RuuviTrmnlApp {
 
     if (useConsoleDisplay) {
       Logger.setSuppressConsole(true);
+      this.consoleDisplay.setForceSendCallback(() => this.forceSendData());
     }
 
     const config = configManager.getConfig();
@@ -165,6 +170,16 @@ export class RuuviTrmnlApp {
       collectorStats,
       cacheStats,
       webhookInfo,
+      trmnlStats: {
+        totalSent: this.trmnlSender.getTotalSent(),
+        ...(this.lastResponseCode !== undefined && {
+          lastResponseCode: this.lastResponseCode,
+        }),
+        ...(this.lastResponseMessage !== undefined && {
+          lastResponseMessage: this.lastResponseMessage,
+        }),
+      },
+      lastSentData: this.lastSentData,
       tags,
     };
 
@@ -184,7 +199,7 @@ export class RuuviTrmnlApp {
     try {
       const hasChanges = this.ruuviCollector.hasChangedConfiguredTags();
 
-      if (!hasChanges) {
+      if (!hasChanges && !this.isFirstSend) {
         this.updateConsoleDisplay();
         return;
       }
@@ -236,14 +251,28 @@ export class RuuviTrmnlApp {
         }
       }
 
-      const success = await this.trmnlSender.sendRuuviData(completeDataset);
+      // Store the data that will be sent for display
+      this.lastSentData = {
+        merge_variables: {
+          ruuvi_tags: completeDataset,
+          lastRefresh: new Date().toISOString(),
+          totalTags: completeDataset.length,
+        },
+      };
 
-      if (success) {
+      const response = await this.trmnlSender.sendRuuviData(completeDataset);
+
+      this.lastResponseCode = response.statusCode;
+      this.lastResponseMessage =
+        response.message || response.error || undefined;
+
+      if (response.success) {
         this.lastSentTime = now;
         const existingTagIds = existingTags.map((tag) => tag.id);
         this.ruuviCollector.markTagsAsSent(existingTagIds);
       }
 
+      this.isFirstSend = false;
       this.updateConsoleDisplay();
     } catch (error) {
       this.updateConsoleDisplay(
@@ -277,6 +306,81 @@ export class RuuviTrmnlApp {
 
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async forceSendData(): Promise<void> {
+    try {
+      // Force send even if no changes and ignore time interval
+      const config = configManager.getConfig();
+      const allConfiguredTagIds = configManager.getOrderedTagIds();
+      const existingTags = this.ruuviCollector.getAllConfiguredTags();
+      const now = Date.now();
+
+      const existingDataMap = new Map<string, RuuviTagData>();
+      existingTags.forEach((tag) => {
+        existingDataMap.set(tag.id, tag);
+      });
+
+      const completeDataset: RuuviTagData[] = [];
+
+      for (const shortId of allConfiguredTagIds) {
+        const aliasName = config.ruuvi.tagAliases[shortId] || `Tag ${shortId}`;
+
+        if (existingDataMap.has(shortId)) {
+          const existingTag = existingDataMap.get(shortId)!;
+          const maxAge = config.ruuvi.dataRetentionTime;
+          const age = now - new Date(existingTag.lastUpdated).getTime();
+
+          if (age > maxAge) {
+            completeDataset.push({
+              id: shortId,
+              name: aliasName,
+              lastUpdated: new Date().toISOString(),
+              status: "stale",
+            });
+          } else {
+            completeDataset.push(existingTag);
+          }
+        } else {
+          completeDataset.push({
+            id: shortId,
+            name: aliasName,
+            lastUpdated: new Date().toISOString(),
+            status: "offline",
+          });
+        }
+      }
+
+      // Store the data that will be sent for display
+      this.lastSentData = {
+        merge_variables: {
+          ruuvi_tags: completeDataset,
+          lastRefresh: new Date().toISOString(),
+          totalTags: completeDataset.length,
+        },
+      };
+
+      const response = await this.trmnlSender.sendRuuviData(completeDataset);
+
+      this.lastResponseCode = response.statusCode;
+      this.lastResponseMessage =
+        response.message || response.error || undefined;
+
+      if (response.success) {
+        this.lastSentTime = now;
+        const existingTagIds = existingTags.map((tag) => tag.id);
+        this.ruuviCollector.markTagsAsSent(existingTagIds);
+      }
+
+      this.updateConsoleDisplay();
+    } catch (error) {
+      this.updateConsoleDisplay(
+        `Error in force send: ${
+          error instanceof Error ? error.message : error
+        }`,
+        true
+      );
+    }
   }
 
   public getStatus(): { running: boolean; stats: any; webhookInfo: any } {

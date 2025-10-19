@@ -31,6 +31,7 @@ export interface TrmnlWebhookResponse {
   success: boolean;
   message?: string;
   error?: string;
+  statusCode?: number;
 }
 
 export interface RawRuuviData {

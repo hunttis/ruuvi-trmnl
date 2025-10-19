@@ -6,11 +6,13 @@ import {
   RuuviTagData,
 } from "./types";
 import { Logger } from "./logger";
+import { ErrorLogger } from "./error-logger";
 
 export class TrmnlWebhookSender {
   private readonly webhookUrl: string;
   private readonly requestTimeout: number;
   private readonly mergeStrategy: string;
+  private totalSent: number = 0;
 
   constructor() {
     const config = configManager.getConfig();
@@ -19,29 +21,30 @@ export class TrmnlWebhookSender {
     this.mergeStrategy = config.trmnl.mergeStrategy;
   }
 
-  public async sendRuuviData(tagData: RuuviTagData[]): Promise<boolean> {
+  public async sendRuuviData(
+    tagData: RuuviTagData[]
+  ): Promise<TrmnlWebhookResponse> {
     try {
       const payload = this.formatPayload(tagData);
       const response = await this.makeWebhookRequest(payload);
 
       if (response.success) {
+        this.totalSent++;
         Logger.log(
           `✅ Successfully sent data for ${tagData.length} tags to TRMNL`
         );
-        return true;
       } else {
-        Logger.error(
-          `❌ TRMNL webhook failed: ${response.message || response.error}`
-        );
-        return false;
+        const errorMsg = response.message || response.error || "Unknown error";
+        Logger.error(`❌ TRMNL webhook failed: ${errorMsg}`);
+        await ErrorLogger.logError(errorMsg, response.statusCode);
       }
+
+      return response;
     } catch (error) {
-      Logger.error(
-        `❌ Error sending to TRMNL: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
-      return false;
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      Logger.error(`❌ Error sending to TRMNL: ${errorMsg}`);
+      await ErrorLogger.logError(errorMsg);
+      return { success: false, error: errorMsg };
     }
   }
 
@@ -98,13 +101,14 @@ export class TrmnlWebhookSender {
           const jsonResponse = await response.text();
           if (jsonResponse.trim()) {
             const parsed = JSON.parse(jsonResponse);
-            return { success: true, ...parsed };
+            return { success: true, statusCode: response.status, ...parsed };
           }
         } catch {}
 
         return {
           success: true,
           message: `HTTP ${response.status} ${response.statusText}`,
+          statusCode: response.status,
         };
       } else {
         const errorText = await response.text().catch(() => "Unknown error");
@@ -116,6 +120,7 @@ export class TrmnlWebhookSender {
         return {
           success: false,
           error: errorMessage,
+          statusCode: response.status,
         };
       }
     } catch (error) {
@@ -174,5 +179,9 @@ export class TrmnlWebhookSender {
       strategy: this.mergeStrategy,
       timeout: this.requestTimeout,
     };
+  }
+
+  public getTotalSent(): number {
+    return this.totalSent;
   }
 }
