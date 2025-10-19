@@ -52,20 +52,20 @@ export class RuuviTrmnlApp {
       console.log("🚀 Starting RuuviTRMNL application...");
     }
 
-    // Test TRMNL connection first
+    // Test TRMNL connection first (but don't fail startup if rate limited)
     const connectionOk = await this.trmnlSender.testConnection();
     if (!connectionOk) {
       if (this.useConsoleDisplay) {
         this.updateConsoleDisplay(
-          "❌ TRMNL connection test failed. Please check your webhook URL.",
+          "⚠️ TRMNL connection test failed. Will try sending data anyway.",
           true
         );
       } else {
-        console.error(
-          "❌ TRMNL connection test failed. Please check your webhook URL."
+        console.warn(
+          "⚠️ TRMNL connection test failed. Will try sending data anyway."
         );
       }
-      return;
+      // Continue startup instead of returning - might just be rate limited
     }
 
     // Initialize cache system first

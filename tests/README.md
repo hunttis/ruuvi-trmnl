@@ -1,6 +1,6 @@
-# RuuviTRMNL Test Suite
+# Tests
 
-This directory contains comprehensive unit tests for the RuuviTRMNL application.
+Run tests with `npm test`.
 
 ## Test Structure
 
