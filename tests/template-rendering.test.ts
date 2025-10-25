@@ -31,7 +31,7 @@ describe("Template Rendering", () => {
             humidity: 45.8,
             battery: 2850,
             status: "active",
-            lastUpdated: "2024-01-15T10:30:00Z",
+            lastUpdated: new Date().toISOString(),
           },
           {
             name: "Bedroom",
@@ -39,7 +39,7 @@ describe("Template Rendering", () => {
             humidity: 52.3,
             battery: 2920,
             status: "active",
-            lastUpdated: "2024-01-15T10:29:45Z",
+            lastUpdated: new Date().toISOString(),
           },
           {
             name: "Kitchen",
@@ -47,7 +47,7 @@ describe("Template Rendering", () => {
             humidity: 38.2,
             battery: 2780,
             status: "active",
-            lastUpdated: "2024-01-15T10:30:15Z",
+            lastUpdated: new Date().toISOString(),
           },
           {
             name: "Garage",
@@ -55,7 +55,7 @@ describe("Template Rendering", () => {
             humidity: 68.5,
             battery: 2650,
             status: "active",
-            lastUpdated: "2024-01-15T10:29:30Z",
+            lastUpdated: new Date().toISOString(),
           },
         ],
       };
@@ -101,7 +101,7 @@ describe("Template Rendering", () => {
             humidity: 45.8,
             battery: 2850,
             status: "active",
-            lastUpdated: "2024-01-15T10:30:00Z",
+            lastUpdated: new Date().toISOString(),
           },
           {
             name: "Bedroom",
@@ -109,7 +109,9 @@ describe("Template Rendering", () => {
             humidity: 51.2,
             battery: 2920,
             status: "stale",
-            lastUpdated: "2024-01-15T09:15:00Z",
+            lastUpdated: new Date(
+              Date.now() - 2 * 60 * 60 * 1000
+            ).toISOString(), // 2 hours ago
           },
           {
             name: "Kitchen",
@@ -117,7 +119,9 @@ describe("Template Rendering", () => {
             humidity: null,
             battery: 2650,
             status: "offline",
-            lastUpdated: "2024-01-14T22:30:00Z",
+            lastUpdated: new Date(
+              Date.now() - 24 * 60 * 60 * 1000
+            ).toISOString(), // 24 hours ago
           },
         ],
       };
@@ -132,11 +136,12 @@ describe("Template Rendering", () => {
       expect(renderedHtml).toContain("22.5");
       expect(renderedHtml).toContain("46%"); // 45.8 rounded to 46
 
-      // Verify that stale sensor is rendered with Finnish date format
-      expect(renderedHtml).toContain("Bedroom");
+      // Verify that stale sensor is rendered with timestamp in title (sensor is 2 hours old, shows time)
+      expect(renderedHtml).toContain("Bedroom"); // "Bedroom" shown with timestamp
       expect(renderedHtml).toContain("19.8");
       expect(renderedHtml).toContain("51%"); // 51.2 rounded to 51
-      expect(renderedHtml).toContain("15.01. 11:15"); // Finnish date format for stale sensor (UTC+2)
+      // Should show timestamp in title since sensor is 2 hours old
+      expect(renderedHtml).toMatch(/Bedroom\s+\(\d{2}:\d{2}\)/); // Bedroom with timestamp in brackets
 
       // Verify that offline sensor is handled appropriately
       expect(renderedHtml).toContain("Kitchen");

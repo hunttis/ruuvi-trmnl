@@ -29,6 +29,8 @@ export interface AppStatus {
   lastSentData?: any;
   tags?: RuuviTagData[];
   lastError?: string;
+  rateLimitedUntil?: Date;
+  rateLimitRemainingMinutes?: number;
 }
 
 export class ConsoleDisplay {
@@ -201,6 +203,18 @@ export class ConsoleDisplay {
       } else {
         lines.push(`   Next Send Available: Now`);
       }
+    }
+
+    // Show rate limiting status if active
+    if (
+      this.status.rateLimitedUntil &&
+      this.status.rateLimitRemainingMinutes !== undefined
+    ) {
+      lines.push(
+        `   🚫 Rate Limited: ${this.status.rateLimitRemainingMinutes.toFixed(
+          1
+        )} min remaining`
+      );
     }
 
     if (this.status.trmnlStats.lastResponseCode !== undefined) {

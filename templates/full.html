@@ -9,8 +9,15 @@ Shows timestamps only when sensor quiet for 30+ minutes
   <div
     class="layout layout--col stretch-x gap--small text--center {% if tag.status == 'stale' or tag.status == 'offline' %}background--muted{% endif %} padding--medium rounded--medium"
   >
-    <!-- Location Name - Large -->
-    <span class="title title--large">{{ tag.name }}</span>
+    <!-- Location Name with timestamp - Large -->
+    {% assign now = 'now' | date: '%s' %} {% assign lastUpdate =
+    tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%s' %} {%
+    assign minutesOld = now | minus: lastUpdate | divided_by: 60 %}
+    <span class="title title--large"
+      >{{ tag.name }}{% if minutesOld > 30 and tag.temperature %} ({{
+      tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%H:%M' }}){%
+      endif %}</span
+    >
 
     <!-- Temperature - Large -->
     <div class="layout layout--col gap--xsmall">
@@ -18,16 +25,6 @@ Shows timestamps only when sensor quiet for 30+ minutes
         {% if tag.temperature %}{{ tag.temperature | round: 1 }}°C{% else
         %}-°C{% endif %}
       </span>
-      <!-- Show timestamp if sensor quiet for 30+ minutes -->
-      {% assign now = 'now' | date: '%s' %} {% assign lastUpdate =
-      tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%s' %} {%
-      assign minutesOld = now | minus: lastUpdate | divided_by: 60 %} {% if
-      minutesOld > 30 and tag.temperature %}
-      <span class="label label--xxsmall"
-        >{{ tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%H:%M'
-        }}</span
-      >
-      {% endif %}
     </div>
 
     <!-- Humidity - Smaller -->

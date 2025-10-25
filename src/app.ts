@@ -20,6 +20,8 @@ export class RuuviTrmnlApp {
   private lastResponseMessage: string | undefined;
   private isFirstSend: boolean = true;
   private lastSentData: any = null;
+  private rateLimitedUntil: number = 0;
+  private readonly rateLimitCooldown: number = 10 * 60 * 1000; // 10 minutes
 
   constructor(useConsoleDisplay: boolean = true) {
     this.ruuviCollector = new RuuviCollector();
@@ -188,6 +190,12 @@ export class RuuviTrmnlApp {
       status.nextSendTime = new Date(this.lastSentTime + this.minSendInterval);
     }
 
+    // Add rate limiting status
+    if (this.isRateLimited()) {
+      status.rateLimitedUntil = new Date(this.rateLimitedUntil);
+      status.rateLimitRemainingMinutes = this.getRateLimitRemainingTime();
+    }
+
     if (isError && message) {
       status.lastError = message;
     }
@@ -209,6 +217,17 @@ export class RuuviTrmnlApp {
 
       if (this.lastSentTime > 0 && timeSinceLastSend < this.minSendInterval) {
         this.updateConsoleDisplay();
+        return;
+      }
+
+      // Check if we're currently rate limited
+      if (this.isRateLimited()) {
+        const remainingTime = Math.ceil(
+          this.getRateLimitRemainingTime() / 1000
+        );
+        this.updateConsoleDisplay(
+          `🚫 Rate limited - ${remainingTime}s remaining`
+        );
         return;
       }
 
@@ -269,6 +288,14 @@ export class RuuviTrmnlApp {
       this.lastResponseMessage =
         response.message || response.error || undefined;
 
+      // Check for rate limiting and set cooldown period
+      if (response.statusCode === 429) {
+        this.rateLimitedUntil = Date.now() + this.rateLimitCooldown;
+        this.updateConsoleDisplay(
+          "🚫 Rate limited! Pausing sends for 10 minutes"
+        );
+      }
+
       if (response.success) {
         this.lastSentTime = now;
         const existingTagIds = existingTags.map((tag) => tag.id);
@@ -324,15 +351,40 @@ export class RuuviTrmnlApp {
     }));
   }
 
+  public isRateLimited(): boolean {
+    return Date.now() < this.rateLimitedUntil;
+  }
+
+  public getRateLimitRemainingTime(): number {
+    const remainingMs = Math.max(0, this.rateLimitedUntil - Date.now());
+    return remainingMs / (60 * 1000); // Convert to minutes
+  }
+
   private async forceSendData(): Promise<void> {
     try {
       const now = Date.now();
+
+      // Check if we're currently rate limited - this blocks even force sends
+      if (this.isRateLimited()) {
+        const remainingTime = Math.ceil(
+          this.getRateLimitRemainingTime() / 1000
+        );
+        this.updateConsoleDisplay(
+          `🚫 Rate limited - cannot send for ${remainingTime}s`
+        );
+        return;
+      }
+
       const timeSinceLastSend = now - this.lastSentTime;
 
       // Show warning if sending too frequently, but still allow the send
       if (this.lastSentTime > 0 && timeSinceLastSend < this.minSendInterval) {
-        const remainingTime = Math.ceil((this.minSendInterval - timeSinceLastSend) / 1000);
-        this.updateConsoleDisplay(`⚠️ Force sending (recommended wait: ${remainingTime}s)`);
+        const remainingTime = Math.ceil(
+          (this.minSendInterval - timeSinceLastSend) / 1000
+        );
+        this.updateConsoleDisplay(
+          `⚠️ Force sending (recommended wait: ${remainingTime}s)`
+        );
       } else {
         this.updateConsoleDisplay("🚀 Force sending data to TRMNL...");
       }
@@ -394,6 +446,14 @@ export class RuuviTrmnlApp {
       this.lastResponseCode = response.statusCode;
       this.lastResponseMessage =
         response.message || response.error || undefined;
+
+      // Check for rate limiting and set cooldown period
+      if (response.statusCode === 429) {
+        this.rateLimitedUntil = Date.now() + this.rateLimitCooldown;
+        this.updateConsoleDisplay(
+          "🚫 Rate limited! Pausing sends for 10 minutes"
+        );
+      }
 
       if (response.success) {
         this.lastSentTime = now;

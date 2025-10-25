@@ -9,27 +9,24 @@ Best for: Top/bottom half of screen, narrow displays
   <div
     class="layout layout--col gap--xsmall {% if tag.status == 'stale' or tag.status == 'offline' %}background--muted{% endif %} padding--small rounded--small"
   >
-    <!-- Location Name -->
+    <!-- Location Name with timestamp -->
+    {% assign now = 'now' | date: '%s' %} {% assign lastUpdate =
+    tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%s' %} {%
+    assign minutesOld = now | minus: lastUpdate | divided_by: 60 %}
     <div class="layout layout--row">
-      <span class="title title--medium">{{ tag.name }}</span>
+      <span class="title title--medium"
+        >{{ tag.name }}{% if minutesOld > 30 and tag.temperature %} ({{
+        tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%H:%M'
+        }}){% endif %}</span
+      >
     </div>
 
-    <!-- Temperature with conditional timestamp -->
+    <!-- Temperature -->
     <div class="layout layout--row">
       <span class="value value--medium value--tnums">
         {% if tag.temperature %}{{ tag.temperature | round: 1 }}°C{% else
         %}-°C{% endif %}
       </span>
-      <!-- Show timestamp if sensor quiet for 30+ minutes -->
-      {% assign now = 'now' | date: '%s' %} {% assign lastUpdate =
-      tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%s' %} {%
-      assign minutesOld = now | minus: lastUpdate | divided_by: 60 %} {% if
-      minutesOld > 30 and tag.temperature %}
-      <span class="label label--xxxsmall"
-        >{{ tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%H:%M'
-        }}</span
-      >
-      {% endif %}
     </div>
 
     <!-- Humidity -->
