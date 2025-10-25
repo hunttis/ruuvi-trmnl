@@ -329,14 +329,15 @@ export class RuuviTrmnlApp {
       const now = Date.now();
       const timeSinceLastSend = now - this.lastSentTime;
 
-      // Even force send must respect the 5-minute minimum interval
+      // Show warning if sending too frequently, but still allow the send
       if (this.lastSentTime > 0 && timeSinceLastSend < this.minSendInterval) {
         const remainingTime = Math.ceil((this.minSendInterval - timeSinceLastSend) / 1000);
-        this.updateConsoleDisplay(`⏳ Must wait ${remainingTime}s before next send`);
-        return;
+        this.updateConsoleDisplay(`⚠️ Force sending (recommended wait: ${remainingTime}s)`);
+      } else {
+        this.updateConsoleDisplay("🚀 Force sending data to TRMNL...");
       }
 
-      // Force send ignores data changes but respects time interval
+      // Force send ignores data changes and time interval
       const config = configManager.getConfig();
       const allConfiguredTagIds = configManager.getOrderedTagIds();
       const existingTags = this.ruuviCollector.getAllConfiguredTags();
