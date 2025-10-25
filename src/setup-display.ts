@@ -109,7 +109,10 @@ export class SetupDisplay {
     lines.push("");
     lines.push(separator);
     lines.push(
-      this.centerText("Press 1-9 to set nickname • S to save • Q to quit • Ctrl+C to exit", width)
+      this.centerText(
+        "Press 1-9 to set nickname • S to save • Q to quit • Ctrl+C to exit",
+        width
+      )
     );
     lines.push("");
 
@@ -149,10 +152,10 @@ export class SetupDisplay {
     lines.push("");
     lines.push("📈 Discovery Statistics");
     lines.push(`   Total Discovered: ${this.status.discoveredTags.size}`);
-    
-    const withNicknames = Array.from(this.status.discoveredTags.values()).filter(
-      tag => tag.nickname
-    ).length;
+
+    const withNicknames = Array.from(
+      this.status.discoveredTags.values()
+    ).filter((tag) => tag.nickname).length;
     lines.push(`   With Nicknames: ${withNicknames}`);
     lines.push(`   Ready to Save: ${withNicknames}`);
 
@@ -174,18 +177,24 @@ export class SetupDisplay {
         const statusIcon = this.getTagStatusIcon(tag);
 
         lines.push(
-          `   ${statusIcon} ${index}) ${tag.shortId.padEnd(10)} ${nickname.substring(0, 15).padEnd(15)}`
+          `   ${statusIcon} ${index}) ${tag.shortId.padEnd(10)} ${nickname
+            .substring(0, 15)
+            .padEnd(15)}`
         );
         lines.push(
-          `      ${temp.padStart(6)}°C ${humidity.padStart(3)}% ${battery.padStart(5)}V (${age})`
+          `      ${temp.padStart(6)}°C ${humidity.padStart(
+            3
+          )}% ${battery.padStart(5)}V (${age})`
         );
-        
+
         index++;
         if (index > 9) break; // Only show first 9 tags for numbering
       }
 
       if (this.status.discoveredTags.size > 9) {
-        lines.push(`   ... and ${this.status.discoveredTags.size - 9} more tags`);
+        lines.push(
+          `   ... and ${this.status.discoveredTags.size - 9} more tags`
+        );
       }
     }
 
@@ -273,7 +282,7 @@ export class SetupDisplay {
 
   private getTagStatusIcon(tag: DiscoveredTag): string {
     const age = Math.floor((Date.now() - tag.lastSeen.getTime()) / 1000);
-    
+
     if (age < 60) {
       return "🟢"; // Fresh data
     } else if (age < 300) {

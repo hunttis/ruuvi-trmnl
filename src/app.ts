@@ -326,11 +326,20 @@ export class RuuviTrmnlApp {
 
   private async forceSendData(): Promise<void> {
     try {
-      // Force send even if no changes and ignore time interval
+      const now = Date.now();
+      const timeSinceLastSend = now - this.lastSentTime;
+
+      // Even force send must respect the 5-minute minimum interval
+      if (this.lastSentTime > 0 && timeSinceLastSend < this.minSendInterval) {
+        const remainingTime = Math.ceil((this.minSendInterval - timeSinceLastSend) / 1000);
+        this.updateConsoleDisplay(`⏳ Must wait ${remainingTime}s before next send`);
+        return;
+      }
+
+      // Force send ignores data changes but respects time interval
       const config = configManager.getConfig();
       const allConfiguredTagIds = configManager.getOrderedTagIds();
       const existingTags = this.ruuviCollector.getAllConfiguredTags();
-      const now = Date.now();
 
       const existingDataMap = new Map<string, RuuviTagData>();
       existingTags.forEach((tag) => {

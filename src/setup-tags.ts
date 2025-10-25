@@ -77,7 +77,7 @@ class RuuviTagSetup {
         };
 
         this.discoveredTags.set(tag.id, discoveredTag);
-        const displayMessage = existingNickname 
+        const displayMessage = existingNickname
           ? `Found tag: ${shortId} (${existingNickname})`
           : `New tag discovered: ${shortId}`;
         this.updateDisplay(displayMessage);
@@ -121,17 +121,17 @@ class RuuviTagSetup {
       startTime: this.startTime,
       discoveredTags: this.discoveredTags,
     };
-    
+
     if (currentAction) {
       status.currentAction = currentAction;
     }
-    
+
     this.display.updateStatus(status);
   }
 
   private handleKeyPress(key: string): void {
     const keyLower = key.toLowerCase();
-    
+
     if (keyLower === "q") {
       this.saveAndExit();
     } else if (keyLower === "s") {
@@ -159,10 +159,10 @@ class RuuviTagSetup {
     }
 
     this.updateDisplay(`Setting nickname for ${tag.shortId}...`);
-    
+
     // Temporarily restore terminal to get input
     this.display.stop();
-    
+
     const currentNickname = tag.nickname || "<no nickname>";
     console.log(`\n📝 Setting nickname for ${tag.shortId}`);
     console.log(`Current nickname: ${currentNickname}`);
@@ -173,11 +173,13 @@ class RuuviTagSetup {
 
     if (nickname.trim()) {
       tag.nickname = nickname.trim();
-      this.updateDisplay(`Set nickname "${nickname.trim()}" for ${tag.shortId}`);
+      this.updateDisplay(
+        `Set nickname "${nickname.trim()}" for ${tag.shortId}`
+      );
     } else {
       this.updateDisplay("Nickname unchanged");
     }
-    
+
     // Restart display
     this.display.start();
   }
@@ -185,7 +187,7 @@ class RuuviTagSetup {
   private async saveToConfig(): Promise<void> {
     try {
       this.updateDisplay("Saving configuration...");
-      
+
       // Load current config
       const currentConfig = configManager.getConfig();
 
@@ -243,7 +245,7 @@ class RuuviTagSetup {
 
       const totalSaved = addedCount + updatedCount;
       this.updateDisplay(`Saved ${totalSaved} tags to config.json`);
-      
+
       // Update display with saved count
       this.display.updateStatus({ savedCount: totalSaved });
     } catch (error) {
