@@ -39,9 +39,11 @@ Best for: Half-width displays, side panels
       <span class="label label--xsmall">humidity</span>
     </div>
 
-    <!-- Status if offline -->
-    {% if tag.status == 'stale' or tag.status == 'offline' %}
-    <span class="label label--xxsmall">{{ tag.status | upcase }}</span>
+    <!-- Status if offline or stale -->
+    {% if tag.status == 'stale' %}
+    <span class="label label--xxsmall">{{ tag.lastUpdated | date: '%d.%m. %H:%M' }}</span>
+    {% elsif tag.status == 'offline' %}
+    <span class="label label--xxsmall">OFFLINE</span>
     {% endif %}
   </div>
   {% endfor %}

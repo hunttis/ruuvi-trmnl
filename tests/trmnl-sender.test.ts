@@ -163,13 +163,15 @@ describe("TrmnlWebhookSender", () => {
       const body = JSON.parse(call![1]!.body as string);
 
       // Expect filtered data with only template-required fields
-      const expectedFilteredData = mockTagData.map(tag => ({
+      const expectedFilteredData = mockTagData.map((tag) => ({
         name: tag.name,
         temperature: tag.temperature,
         humidity: tag.humidity,
         status: tag.status,
         lastUpdated: tag.lastUpdated,
-        ...(tag.lastTemperatureUpdate && { lastTemperatureUpdate: tag.lastTemperatureUpdate }),
+        ...(tag.lastTemperatureUpdate && {
+          lastTemperatureUpdate: tag.lastTemperatureUpdate,
+        }),
       }));
 
       expect(body).toMatchObject({

@@ -37,10 +37,14 @@ Best for: Small corner displays, dashboard quadrants
       {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}-%{% endif %}
     </span>
 
-    <!-- Status if offline -->
-    {% if tag.status == 'stale' or tag.status == 'offline' %}
+    <!-- Status if offline or stale -->
+    {% if tag.status == 'stale' %}
     <span class="label label--xxxsmall text--center"
-      >{{ tag.status | upcase }}</span
+      >{{ tag.lastUpdated | date: '%d.%m. %H:%M' }}</span
+    >
+    {% elsif tag.status == 'offline' %}
+    <span class="label label--xxxsmall text--center"
+      >OFFLINE</span
     >
     {% endif %}
   </div>

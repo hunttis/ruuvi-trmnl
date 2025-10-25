@@ -31,7 +31,7 @@ describe("Template Rendering", () => {
             humidity: 45.8,
             battery: 2850,
             status: "active",
-            lastSeen: new Date("2024-01-15T10:30:00Z"),
+            lastUpdated: "2024-01-15T10:30:00Z",
           },
           {
             name: "Bedroom",
@@ -39,7 +39,7 @@ describe("Template Rendering", () => {
             humidity: 52.3,
             battery: 2920,
             status: "active",
-            lastSeen: new Date("2024-01-15T10:29:45Z"),
+            lastUpdated: "2024-01-15T10:29:45Z",
           },
           {
             name: "Kitchen",
@@ -47,7 +47,7 @@ describe("Template Rendering", () => {
             humidity: 38.2,
             battery: 2780,
             status: "active",
-            lastSeen: new Date("2024-01-15T10:30:15Z"),
+            lastUpdated: "2024-01-15T10:30:15Z",
           },
           {
             name: "Garage",
@@ -55,7 +55,7 @@ describe("Template Rendering", () => {
             humidity: 68.5,
             battery: 2650,
             status: "active",
-            lastSeen: new Date("2024-01-15T10:29:30Z"),
+            lastUpdated: "2024-01-15T10:29:30Z",
           },
         ],
       };
@@ -101,7 +101,7 @@ describe("Template Rendering", () => {
             humidity: 45.8,
             battery: 2850,
             status: "active",
-            lastSeen: new Date("2024-01-15T10:30:00Z"),
+            lastUpdated: "2024-01-15T10:30:00Z",
           },
           {
             name: "Bedroom",
@@ -109,7 +109,7 @@ describe("Template Rendering", () => {
             humidity: 51.2,
             battery: 2920,
             status: "stale",
-            lastSeen: new Date("2024-01-15T09:15:00Z"),
+            lastUpdated: "2024-01-15T09:15:00Z",
           },
           {
             name: "Kitchen",
@@ -117,7 +117,7 @@ describe("Template Rendering", () => {
             humidity: null,
             battery: 2650,
             status: "offline",
-            lastSeen: new Date("2024-01-14T22:30:00Z"),
+            lastUpdated: "2024-01-14T22:30:00Z",
           },
         ],
       };
@@ -132,11 +132,11 @@ describe("Template Rendering", () => {
       expect(renderedHtml).toContain("22.5");
       expect(renderedHtml).toContain("46%"); // 45.8 rounded to 46
 
-      // Verify that stale sensor is rendered with indicator
+      // Verify that stale sensor is rendered with Finnish date format
       expect(renderedHtml).toContain("Bedroom");
       expect(renderedHtml).toContain("19.8");
       expect(renderedHtml).toContain("51%"); // 51.2 rounded to 51
-      expect(renderedHtml).toContain("STALE"); // Stale indicator
+      expect(renderedHtml).toContain("15.01. 11:15"); // Finnish date format for stale sensor (UTC+2)
 
       // Verify that offline sensor is handled appropriately
       expect(renderedHtml).toContain("Kitchen");
@@ -155,7 +155,7 @@ describe("Template Rendering", () => {
             humidity: 50.0,
             battery: 2800,
             status: "active",
-            lastSeen: new Date(),
+            lastUpdated: new Date().toISOString(),
           },
           {
             name: "Sensor 2",
@@ -163,7 +163,7 @@ describe("Template Rendering", () => {
             humidity: 55.5,
             battery: 2700,
             status: "stale",
-            lastSeen: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
+            lastUpdated: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
           },
         ],
       };
@@ -216,7 +216,7 @@ describe("Template Rendering", () => {
             humidity: 47.2,
             battery: 2890,
             status: "active",
-            lastSeen: new Date(),
+            lastUpdated: new Date().toISOString(),
           },
         ],
       };

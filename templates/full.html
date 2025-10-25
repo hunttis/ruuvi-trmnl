@@ -39,10 +39,14 @@ Shows timestamps only when sensor quiet for 30+ minutes
       <span class="label label--small">humidity</span>
     </div>
 
-    <!-- Status if offline -->
-    {% if tag.status == 'stale' or tag.status == 'offline' %}
+    <!-- Status if offline or stale -->
+    {% if tag.status == 'stale' %}
     <span class="label label--small label--underline"
-      >{{ tag.status | upcase }}</span
+      >{{ tag.lastUpdated | date: '%d.%m.%Y %H:%M' }}</span
+    >
+    {% elsif tag.status == 'offline' %}
+    <span class="label label--small label--underline"
+      >OFFLINE</span
     >
     {% endif %}
   </div>
