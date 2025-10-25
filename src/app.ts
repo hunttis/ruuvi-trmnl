@@ -10,10 +10,11 @@ export class RuuviTrmnlApp {
   private trmnlSender: TrmnlWebhookSender;
   private consoleDisplay: ConsoleDisplay;
   private intervalId: NodeJS.Timeout | null = null;
+  private displayUpdateIntervalId: NodeJS.Timeout | null = null;
   private isRunning = false;
   private readonly refreshInterval: number;
   private lastSentTime: number = 0;
-  private readonly minSendInterval: number = 5 * 60 * 1000;
+  private readonly minSendInterval: number = 10 * 60 * 1000; // 10 minutes
   private startTime: Date = new Date();
   private readonly useConsoleDisplay: boolean;
   private lastResponseCode: number | undefined;
@@ -22,12 +23,14 @@ export class RuuviTrmnlApp {
   private lastSentData: any = null;
   private rateLimitedUntil: number = 0;
   private readonly rateLimitCooldown: number = 10 * 60 * 1000; // 10 minutes
+  private readonly manualMode: boolean;
 
-  constructor(useConsoleDisplay: boolean = true) {
+  constructor(useConsoleDisplay: boolean = true, manualMode: boolean = false) {
     this.ruuviCollector = new RuuviCollector();
     this.trmnlSender = new TrmnlWebhookSender();
     this.consoleDisplay = new ConsoleDisplay();
     this.useConsoleDisplay = useConsoleDisplay;
+    this.manualMode = manualMode;
 
     if (useConsoleDisplay) {
       Logger.setSuppressConsole(true);
@@ -86,24 +89,41 @@ export class RuuviTrmnlApp {
     await this.ruuviCollector.startScanning();
 
     await this.delay(3000);
-    await this.sendDataCycle();
-    this.intervalId = setInterval(() => {
-      this.sendDataCycle().catch((error) => {
-        if (this.useConsoleDisplay) {
-          this.updateConsoleDisplay(
-            `❌ Error in periodic data cycle: ${
+
+    // In manual mode, don't send on startup or automatically
+    if (!this.manualMode) {
+      await this.sendDataCycle();
+      this.intervalId = setInterval(() => {
+        this.sendDataCycle().catch((error) => {
+          if (this.useConsoleDisplay) {
+            this.updateConsoleDisplay(
+              `❌ Error in periodic data cycle: ${
+                error instanceof Error ? error.message : error
+              }`,
+              true
+            );
+          } else {
+            console.error(
+              "❌ Error in periodic data cycle:",
               error instanceof Error ? error.message : error
-            }`,
-            true
-          );
-        } else {
-          console.error(
-            "❌ Error in periodic data cycle:",
-            error instanceof Error ? error.message : error
-          );
-        }
-      });
-    }, this.refreshInterval);
+            );
+          }
+        });
+      }, this.refreshInterval);
+    } else {
+      if (this.useConsoleDisplay) {
+        this.updateConsoleDisplay(
+          "⌨️  Manual mode: Press SPACE to send data to TRMNL"
+        );
+      }
+    }
+
+    // Update display every 2 seconds to show live tag data
+    if (this.useConsoleDisplay) {
+      this.displayUpdateIntervalId = setInterval(() => {
+        this.updateConsoleDisplay();
+      }, 2000);
+    }
 
     this.isRunning = true;
 
@@ -137,6 +157,11 @@ export class RuuviTrmnlApp {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
+    }
+
+    if (this.displayUpdateIntervalId) {
+      clearInterval(this.displayUpdateIntervalId);
+      this.displayUpdateIntervalId = null;
     }
 
     await this.ruuviCollector.stopScanning();

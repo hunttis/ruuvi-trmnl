@@ -22,10 +22,10 @@ export class RuuviCollector {
 
   private setupRuuviListeners(): void {
     ruuvi.on("found", (tag: RawRuuviTag) => {
+      const tagName = configManager.getTagAlias(tag.id);
+
       if (!this.discoveredTags.has(tag.id)) {
         this.discoveredTags.add(tag.id);
-        const config = configManager.getConfig();
-        const tagName = configManager.getTagAlias(tag.id);
 
         Logger.log(
           `🎯 Found RuuviTag: ${tagName} (${tag.id.substring(0, 8)}...)`
@@ -37,11 +37,12 @@ export class RuuviCollector {
           lastUpdated: new Date().toISOString(),
           status: "active",
         });
-
-        tag.on("updated", (data: RawRuuviData) => {
-          this.updateTagData(tag.id, data);
-        });
       }
+
+      // Always set up the updated listener (even for rediscovered tags)
+      tag.on("updated", (data: RawRuuviData) => {
+        this.updateTagData(tag.id, data);
+      });
     });
 
     ruuvi.on("warning", (message: string) => {
@@ -88,6 +89,7 @@ export class RuuviCollector {
 
     this.isScanning = true;
     Logger.log("🔍 Starting RuuviTag scan...");
+    // Scanning starts automatically when listeners are set up
   }
 
   public stopScanning(): void {
