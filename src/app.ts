@@ -88,25 +88,21 @@ export class RuuviTrmnlApp {
     }
     await this.ruuviCollector.startScanning();
 
-    await this.delay(3000);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // In manual mode, don't send on startup or automatically
     if (!this.manualMode) {
       await this.sendDataCycle();
       this.intervalId = setInterval(() => {
         this.sendDataCycle().catch((error) => {
+          const errorMsg = error?.message ?? String(error);
           if (this.useConsoleDisplay) {
             this.updateConsoleDisplay(
-              `❌ Error in periodic data cycle: ${
-                error instanceof Error ? error.message : error
-              }`,
+              `❌ Error in periodic data cycle: ${errorMsg}`,
               true
             );
           } else {
-            console.error(
-              "❌ Error in periodic data cycle:",
-              error instanceof Error ? error.message : error
-            );
+            console.error("❌ Error in periodic data cycle:", errorMsg);
           }
         });
       }, this.refreshInterval);
@@ -329,11 +325,9 @@ export class RuuviTrmnlApp {
 
       this.isFirstSend = false;
       this.updateConsoleDisplay();
-    } catch (error) {
+    } catch (error: any) {
       this.updateConsoleDisplay(
-        `Error in data cycle: ${
-          error instanceof Error ? error.message : error
-        }`,
+        `Error in data cycle: ${error?.message ?? String(error)}`,
         true
       );
     }
@@ -357,10 +351,6 @@ export class RuuviTrmnlApp {
       console.error("💥 Unhandled rejection at:", promise, "reason:", reason);
       this.stop().finally(() => process.exit(1));
     });
-  }
-
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private filterTagDataForTemplate(tags: RuuviTagData[]): any[] {
@@ -487,11 +477,9 @@ export class RuuviTrmnlApp {
       }
 
       this.updateConsoleDisplay();
-    } catch (error) {
+    } catch (error: any) {
       this.updateConsoleDisplay(
-        `Error in force send: ${
-          error instanceof Error ? error.message : error
-        }`,
+        `Error in force send: ${error?.message ?? String(error)}`,
         true
       );
     }
@@ -518,10 +506,10 @@ async function main(): Promise<void> {
 
     const app = new RuuviTrmnlApp();
     await app.start();
-  } catch (error) {
+  } catch (error: any) {
     console.error(
       "💥 Failed to start application:",
-      error instanceof Error ? error.message : error
+      error?.message ?? String(error)
     );
     process.exit(1);
   }

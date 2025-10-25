@@ -12,11 +12,9 @@ async function main() {
 
   try {
     await app.start();
-  } catch (error) {
+  } catch (error: any) {
     Logger.log(
-      `❌ Failed to start application: ${
-        error instanceof Error ? error.message : error
-      }`
+      `❌ Failed to start application: ${error?.message ?? String(error)}`
     );
     process.exit(1);
   }

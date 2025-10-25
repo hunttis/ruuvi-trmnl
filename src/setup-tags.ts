@@ -248,8 +248,8 @@ class RuuviTagSetup {
 
       // Update display with saved count
       this.display.updateStatus({ savedCount: totalSaved });
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+    } catch (error: any) {
+      const errorMsg = error?.message ?? "Unknown error";
       this.updateDisplay(`Error saving config: ${errorMsg}`);
     }
   }
@@ -257,10 +257,6 @@ class RuuviTagSetup {
   private async saveAndExit(): Promise<void> {
     this.updateDisplay("Saving configuration before exit...");
     await this.saveToConfig();
-    this.cleanup();
-  }
-
-  private cleanup(): void {
     this.updateDisplay("Stopping scan and cleaning up...");
     this.display.stop();
     this.rl.close();

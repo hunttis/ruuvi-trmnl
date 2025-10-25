@@ -40,11 +40,14 @@ export class TrmnlWebhookSender {
       }
 
       return response;
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Unknown error";
-      Logger.error(`❌ Error sending to TRMNL: ${errorMsg}`);
-      await ErrorLogger.logError(errorMsg);
-      return { success: false, error: errorMsg };
+    } catch (error: any) {
+      const errorMsg = error?.message ?? "Unknown error";
+      ErrorLogger.logError(`Failed to send data: ${errorMsg}`);
+      return {
+        success: false,
+        error: errorMsg,
+        statusCode: 0,
+      };
     }
   }
 
@@ -175,11 +178,9 @@ export class TrmnlWebhookSender {
         );
         return false;
       }
-    } catch (error) {
+    } catch (error: any) {
       Logger.error(
-        `❌ TRMNL webhook connection test error: ${
-          error instanceof Error ? error.message : "Unknown"
-        }`
+        `❌ TRMNL webhook connection test error: ${error?.message ?? "Unknown"}`
       );
       return false;
     }

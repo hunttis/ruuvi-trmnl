@@ -105,10 +105,10 @@ export class TrmnlOneShot {
         console.error("❌ Failed to send data to TRMNL");
         process.exit(1);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(
         "❌ Error sending to TRMNL:",
-        error instanceof Error ? error.message : error
+        error?.message ?? String(error)
       );
       process.exit(1);
     }
@@ -170,11 +170,11 @@ export class TrmnlOneShot {
       this.checkIntervalId = setInterval(() => {
         this.checkForNewTags();
       }, 500);
-    } catch (error) {
+    } catch (error: any) {
       clearTimeout(timeoutId);
       console.error(
         "❌ Error starting collector:",
-        error instanceof Error ? error.message : error
+        error?.message ?? String(error)
       );
       process.exit(1);
     }
@@ -229,11 +229,8 @@ Description:
   try {
     const oneShot = new TrmnlOneShot({ verbose });
     await oneShot.run(timeout);
-  } catch (error) {
-    console.error(
-      "❌ Failed to start:",
-      error instanceof Error ? error.message : error
-    );
+  } catch (error: any) {
+    console.error("❌ Failed to start:", error?.message ?? String(error));
     process.exit(1);
   }
 }
