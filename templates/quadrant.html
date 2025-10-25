@@ -43,9 +43,7 @@ Best for: Small corner displays, dashboard quadrants
       >{{ tag.lastUpdated | date: '%d.%m. %H:%M' }}</span
     >
     {% elsif tag.status == 'offline' %}
-    <span class="label label--xxxsmall text--center"
-      >OFFLINE</span
-    >
+    <span class="label label--xxxsmall text--center">OFFLINE</span>
     {% endif %}
   </div>
   {% endfor %}

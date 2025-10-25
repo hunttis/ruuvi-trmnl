@@ -45,9 +45,7 @@ Shows timestamps only when sensor quiet for 30+ minutes
       >{{ tag.lastUpdated | date: '%d.%m.%Y %H:%M' }}</span
     >
     {% elsif tag.status == 'offline' %}
-    <span class="label label--small label--underline"
-      >OFFLINE</span
-    >
+    <span class="label label--small label--underline">OFFLINE</span>
     {% endif %}
   </div>
   {% endfor %}

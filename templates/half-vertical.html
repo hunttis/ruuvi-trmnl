@@ -43,7 +43,9 @@ Best for: Top/bottom half of screen, narrow displays
     <!-- Status if offline or stale -->
     {% if tag.status == 'stale' %}
     <div class="layout layout--row">
-      <span class="label label--xxxsmall">{{ tag.lastUpdated | date: '%d.%m. %H:%M' }}</span>
+      <span class="label label--xxxsmall"
+        >{{ tag.lastUpdated | date: '%d.%m. %H:%M' }}</span
+      >
     </div>
     {% elsif tag.status == 'offline' %}
     <div class="layout layout--row">

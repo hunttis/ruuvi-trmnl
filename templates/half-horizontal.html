@@ -41,7 +41,9 @@ Best for: Half-width displays, side panels
 
     <!-- Status if offline or stale -->
     {% if tag.status == 'stale' %}
-    <span class="label label--xxsmall">{{ tag.lastUpdated | date: '%d.%m. %H:%M' }}</span>
+    <span class="label label--xxsmall"
+      >{{ tag.lastUpdated | date: '%d.%m. %H:%M' }}</span
+    >
     {% elsif tag.status == 'offline' %}
     <span class="label label--xxsmall">OFFLINE</span>
     {% endif %}
