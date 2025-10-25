@@ -162,9 +162,19 @@ describe("TrmnlWebhookSender", () => {
       const call = mockFetch.mock.calls[0];
       const body = JSON.parse(call![1]!.body as string);
 
+      // Expect filtered data with only template-required fields
+      const expectedFilteredData = mockTagData.map(tag => ({
+        name: tag.name,
+        temperature: tag.temperature,
+        humidity: tag.humidity,
+        status: tag.status,
+        lastUpdated: tag.lastUpdated,
+        ...(tag.lastTemperatureUpdate && { lastTemperatureUpdate: tag.lastTemperatureUpdate }),
+      }));
+
       expect(body).toMatchObject({
         merge_variables: {
-          ruuvi_tags: mockTagData,
+          ruuvi_tags: expectedFilteredData,
           lastRefresh: expect.any(String),
           totalTags: 2,
         },

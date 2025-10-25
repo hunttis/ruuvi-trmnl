@@ -235,7 +235,7 @@ export class RuuviTrmnlApp {
             completeDataset.push({
               id: shortId,
               name: aliasName,
-              lastUpdated: new Date().toISOString(),
+              lastUpdated: existingTag.lastUpdated,
               status: "stale",
             });
           } else {
@@ -351,7 +351,7 @@ export class RuuviTrmnlApp {
             completeDataset.push({
               id: shortId,
               name: aliasName,
-              lastUpdated: new Date().toISOString(),
+              lastUpdated: existingTag.lastUpdated,
               status: "stale",
             });
           } else {
