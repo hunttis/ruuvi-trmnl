@@ -60,14 +60,27 @@ class RuuviTagSetup {
       const shortId = tag.id.substring(0, 8);
 
       if (!this.discoveredTags.has(tag.id)) {
+        // Check if this tag already has a nickname in config
+        let existingNickname: string | undefined;
+        try {
+          const currentConfig = configManager.getConfig();
+          existingNickname = currentConfig.ruuvi.tagAliases[shortId];
+        } catch (error) {
+          // Config file might not exist yet, that's ok
+        }
+
         const discoveredTag: DiscoveredTag = {
           id: tag.id,
           shortId,
           lastSeen: new Date(),
+          ...(existingNickname && { nickname: existingNickname }),
         };
 
         this.discoveredTags.set(tag.id, discoveredTag);
-        this.updateDisplay(`New tag discovered: ${shortId}`);
+        const displayMessage = existingNickname 
+          ? `Found tag: ${shortId} (${existingNickname})`
+          : `New tag discovered: ${shortId}`;
+        this.updateDisplay(displayMessage);
       }
 
       // Listen for data updates
