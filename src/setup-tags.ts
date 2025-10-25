@@ -4,10 +4,11 @@ import * as readline from "readline";
 import * as fs from "fs";
 import { configManager } from "./config";
 import { RawRuuviTag, RawRuuviData } from "./types";
+import { SetupDisplay } from "./setup-display";
 
 const ruuvi = require("node-ruuvitag");
 
-interface DiscoveredTag {
+export interface DiscoveredTag {
   id: string;
   shortId: string;
   nickname?: string;
@@ -23,32 +24,35 @@ interface DiscoveredTag {
 
 class RuuviTagSetup {
   private discoveredTags = new Map<string, DiscoveredTag>();
-  private rl: readline.Interface;
+  private display: SetupDisplay;
   private isScanning = false;
+  private startTime = new Date();
+  private rl: readline.Interface;
 
   constructor() {
+    this.display = new SetupDisplay();
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
 
-    // Handle Ctrl+C gracefully
-    this.rl.on("SIGINT", () => {
-      this.cleanup();
+    this.display.setKeyPressCallback((key: string) => {
+      this.handleKeyPress(key);
     });
   }
 
   public async start(): Promise<void> {
-    console.log("\n🔍 RuuviTag Setup Tool");
-    console.log("═════════════════════════");
-    console.log(
-      "This tool will help you discover RuuviTags and assign nicknames."
-    );
-    console.log("Press Ctrl+C at any time to save and exit.\n");
+    this.startTime = new Date();
+    this.display.start();
+    this.updateDisplay("Starting RuuviTag discovery...");
 
     this.setupRuuviListeners();
     await this.startScanning();
-    await this.showMainMenu();
+
+    // Keep the process running
+    return new Promise((resolve) => {
+      // The process will exit via keyboard handlers
+    });
   }
 
   private setupRuuviListeners(): void {
@@ -63,8 +67,7 @@ class RuuviTagSetup {
         };
 
         this.discoveredTags.set(tag.id, discoveredTag);
-        console.log(`\n📡 New tag discovered: ${shortId}`);
-        this.refreshDisplay();
+        this.updateDisplay(`New tag discovered: ${shortId}`);
       }
 
       // Listen for data updates
@@ -83,69 +86,48 @@ class RuuviTagSetup {
             ...(data.battery !== undefined && { battery: data.battery / 1000 }),
             ...(data.rssi !== undefined && { rssi: data.rssi }),
           };
+          this.updateDisplay();
         }
       });
     });
 
     ruuvi.on("warning", (message: string) => {
-      console.log(`⚠️  ${message}`);
+      this.updateDisplay(`Warning: ${message}`);
     });
   }
 
   private async startScanning(): Promise<void> {
-    console.log("🔍 Starting RuuviTag scan...");
     this.isScanning = true;
+    this.updateDisplay("RuuviTag scan started");
     // The ruuvi library starts scanning automatically when listeners are set up
   }
 
-  private refreshDisplay(): void {
-    if (this.discoveredTags.size === 0) return;
-
-    console.log("\n📋 Discovered Tags:");
-    console.log("───────────────────");
-
-    let index = 1;
-    for (const [fullId, tag] of this.discoveredTags) {
-      const nickname = tag.nickname || "<no nickname>";
-      const temp = tag.data?.temperature?.toFixed(1) || "N/A";
-      const humidity = tag.data?.humidity?.toFixed(0) || "N/A";
-      const battery = tag.data?.battery?.toFixed(2) || "N/A";
-      const lastSeen = tag.lastSeen.toLocaleTimeString();
-
-      console.log(`${index}. ${tag.shortId} → ${nickname}`);
-      console.log(
-        `   📊 ${temp}°C, ${humidity}%, ${battery}V | Last: ${lastSeen}`
-      );
-      index++;
+  private updateDisplay(currentAction?: string): void {
+    const status: any = {
+      isScanning: this.isScanning,
+      startTime: this.startTime,
+      discoveredTags: this.discoveredTags,
+    };
+    
+    if (currentAction) {
+      status.currentAction = currentAction;
     }
+    
+    this.display.updateStatus(status);
   }
 
-  private async showMainMenu(): Promise<void> {
-    while (true) {
-      this.refreshDisplay();
-
-      console.log("\n🛠️  Actions:");
-      console.log("1-9) Set nickname for tag number");
-      console.log("s) Save to config.json");
-      console.log("r) Refresh display");
-      console.log("q) Quit");
-
-      const choice = await this.askQuestion("\nChoose an action: ");
-
-      if (choice.toLowerCase() === "q") {
-        await this.saveAndExit();
-        break;
-      } else if (choice.toLowerCase() === "s") {
-        await this.saveToConfig();
-      } else if (choice.toLowerCase() === "r") {
-        // Just refresh by continuing the loop
-        continue;
-      } else if (/^[1-9]$/.test(choice)) {
-        const tagIndex = parseInt(choice) - 1;
-        await this.setNickname(tagIndex);
-      } else {
-        console.log("❌ Invalid choice. Try again.");
-      }
+  private handleKeyPress(key: string): void {
+    const keyLower = key.toLowerCase();
+    
+    if (keyLower === "q") {
+      this.saveAndExit();
+    } else if (keyLower === "s") {
+      this.saveToConfig();
+    } else if (keyLower === "r") {
+      this.updateDisplay("Display refreshed");
+    } else if (/^[1-9]$/.test(key)) {
+      const tagIndex = parseInt(key) - 1;
+      this.setNickname(tagIndex);
     }
   }
 
@@ -153,18 +135,22 @@ class RuuviTagSetup {
     const tags = Array.from(this.discoveredTags.values());
 
     if (index >= tags.length) {
-      console.log("❌ Invalid tag number.");
+      this.updateDisplay("Invalid tag number");
       return;
     }
 
     const tag = tags[index];
     if (!tag) {
-      console.log("❌ Tag not found.");
+      this.updateDisplay("Tag not found");
       return;
     }
 
+    this.updateDisplay(`Setting nickname for ${tag.shortId}...`);
+    
+    // Temporarily restore terminal to get input
+    this.display.stop();
+    
     const currentNickname = tag.nickname || "<no nickname>";
-
     console.log(`\n📝 Setting nickname for ${tag.shortId}`);
     console.log(`Current nickname: ${currentNickname}`);
 
@@ -174,14 +160,19 @@ class RuuviTagSetup {
 
     if (nickname.trim()) {
       tag.nickname = nickname.trim();
-      console.log(`✅ Set nickname "${nickname.trim()}" for ${tag.shortId}`);
+      this.updateDisplay(`Set nickname "${nickname.trim()}" for ${tag.shortId}`);
     } else {
-      console.log("ℹ️  Nickname unchanged.");
+      this.updateDisplay("Nickname unchanged");
     }
+    
+    // Restart display
+    this.display.start();
   }
 
   private async saveToConfig(): Promise<void> {
     try {
+      this.updateDisplay("Saving configuration...");
+      
       // Load current config
       const currentConfig = configManager.getConfig();
 
@@ -237,37 +228,28 @@ class RuuviTagSetup {
         JSON.stringify(updatedConfig, null, 2)
       );
 
-      console.log(`\n✅ Config saved to ${configPath}`);
-      console.log(`   📝 Added: ${addedCount} new tags`);
-      console.log(`   🔄 Updated: ${updatedCount} existing tags`);
-
-      // Show current tagAliases and displayOrder
-      console.log("\n📋 Current tagAliases:");
-      for (const [id, alias] of Object.entries(tagAliases)) {
-        console.log(`   ${id} → ${alias}`);
-      }
-
-      if (updatedDisplayOrder.length > 0) {
-        console.log("\n📐 Display order (left to right, top to bottom):");
-        updatedDisplayOrder.forEach((id, index) => {
-          const alias = tagAliases[id] || `Tag ${id}`;
-          console.log(`   ${index + 1}. ${alias} (${id})`);
-        });
-      }
+      const totalSaved = addedCount + updatedCount;
+      this.updateDisplay(`Saved ${totalSaved} tags to config.json`);
+      
+      // Update display with saved count
+      this.display.updateStatus({ savedCount: totalSaved });
     } catch (error) {
-      console.error("❌ Error saving config:", error);
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      this.updateDisplay(`Error saving config: ${errorMsg}`);
     }
   }
 
   private async saveAndExit(): Promise<void> {
-    console.log("\n💾 Saving configuration before exit...");
+    this.updateDisplay("Saving configuration before exit...");
     await this.saveToConfig();
     this.cleanup();
   }
 
   private cleanup(): void {
-    console.log("\n🛑 Stopping scan and cleaning up...");
+    this.updateDisplay("Stopping scan and cleaning up...");
+    this.display.stop();
     this.rl.close();
+    console.log("\n✅ Setup completed. Configuration saved to config.json");
     process.exit(0);
   }
 
