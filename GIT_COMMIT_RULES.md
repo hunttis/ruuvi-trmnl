@@ -47,6 +47,7 @@ The user wants **SINGLE ROW COMMIT MESSAGES ONLY**.
 **The user will ALWAYS do the push themselves.**
 
 Do NOT run `git push` commands. Only do:
+
 - `git add -A`
 - `git commit -m "message"`
 

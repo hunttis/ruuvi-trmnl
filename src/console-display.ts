@@ -137,6 +137,15 @@ export class ConsoleDisplay {
       lines.push(`${paddedLeft} │ ${paddedRight}`);
     }
 
+    // Add empty lines with separator to maintain vertical line
+    const targetContentLines = 20;
+    while (lines.length - 5 < targetContentLines) {
+      // -5 for header lines
+      const paddedLeft = "".padEnd(leftColumnWidth - 1);
+      const paddedRight = "".padEnd(rightColumnWidth);
+      lines.push(`${paddedLeft} │ ${paddedRight}`);
+    }
+
     lines.push("");
     lines.push(separator);
     lines.push(
