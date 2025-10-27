@@ -9,6 +9,7 @@ git commit -m "Single line description of changes"
 ```
 
 ### ❌ NEVER DO THIS:
+
 ```bash
 git commit -m "Title
 
@@ -18,6 +19,7 @@ git commit -m "Title
 ```
 
 ### ✅ ALWAYS DO THIS:
+
 ```bash
 git commit -m "Brief description of what changed"
 ```
@@ -25,11 +27,13 @@ git commit -m "Brief description of what changed"
 ## Examples
 
 Good:
+
 - `git commit -m "Add temperature caching system"`
 - `git commit -m "Fix RuuviTag scanning initialization"`
 - `git commit -m "Update templates with stale detection logic"`
 
 Bad:
+
 - Multi-line commit messages with bullets
 - Commit messages with newlines
 - Detailed explanations in commit message
