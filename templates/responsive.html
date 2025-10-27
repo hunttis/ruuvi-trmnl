@@ -19,7 +19,7 @@ Best for: All display sizes and configurations
   >
     <!-- Location Name with timestamp -->
     <span
-      class="title title--xxxsmall sm:title--xxsmall md:title--xsmall lg:title--small text--center"
+      class="title title--xxsmall sm:title--xsmall md:title--small lg:title--medium text--center"
       >{{ tag.name | truncate: 12 }}{% if isStale and tag.temperature %} ({{
       tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%H:%M' }}){%
       endif %}</span
@@ -28,7 +28,7 @@ Best for: All display sizes and configurations
     <!-- Temperature -->
     <div class="layout layout--col">
       <span
-        class="value value--small sm:value--medium md:value--large lg:value--xlarge value--tnums text--center"
+        class="value value--medium sm:value--large md:value--xlarge lg:value--xxxlarge value--tnums text--center"
         data-value-fit="true"
       >
         {% if tag.temperature %}{{ tag.temperature | round: 1 }}°{% else %}-°{%
@@ -38,7 +38,7 @@ Best for: All display sizes and configurations
 
     <!-- Humidity -->
     <span
-      class="value value--xsmall sm:value--small md:value--medium lg:value--large value--tnums text--center"
+      class="value value--xxsmall sm:value--xsmall md:value--small lg:value--medium value--tnums text--center"
     >
       {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}-%{% endif %}
     </span>
