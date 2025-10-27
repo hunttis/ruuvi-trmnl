@@ -13,6 +13,7 @@ Copy template content into a TRMNL Private Plugin.
 ## Responsive Template
 
 The `responsive.html` template uses TRMNL's responsive framework to automatically adapt to:
+
 - **Screen sizes**: Small (600px+), Medium (800px+), Large (1024px+)
 - **Orientation**: Landscape (default) and Portrait
 - **Bit-depth**: 1-bit, 2-bit, and 4-bit displays

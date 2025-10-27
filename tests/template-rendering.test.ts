@@ -279,7 +279,7 @@ describe("Template Rendering", () => {
       expect(renderedHtml).toContain("sm:");
       expect(renderedHtml).toContain("md:");
       expect(renderedHtml).toContain("lg:");
-      
+
       // Verify content is rendered (name may be truncated)
       expect(renderedHtml).toContain("Livin");
       expect(renderedHtml).toContain("22.5");
@@ -334,7 +334,9 @@ describe("Template Rendering", () => {
             humidity: null,
             battery: 2650,
             status: "offline",
-            lastUpdated: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+            lastUpdated: new Date(
+              Date.now() - 24 * 60 * 60 * 1000
+            ).toISOString(),
           },
         ],
       };
