@@ -12,7 +12,7 @@ Best for: Half-width displays, side panels
   %} {% assign isOffline = true %} {% elsif minutesOld > 30 %} {% assign isStale
   = true %} {% endif %}
   <div
-    class="layout layout--col gap--xsmall {% if isOffline or isStale or tag.status == 'offline' %}background--muted{% endif %} padding--small rounded--small"
+    class="layout layout--col gap--xsmall {% if isOffline or isStale %}background--muted{% endif %} padding--small rounded--small"
   >
     <!-- Location Name with timestamp -->
     <span class="title title--small"
@@ -38,9 +38,9 @@ Best for: Half-width displays, side panels
       <span class="label label--xsmall">humidity</span>
     </div>
 
-    <!-- Status if offline or stale -->
-    {% if tag.status == 'offline' or isOffline %}
-    <span class="label label--xxsmall">OFFLINE</span>
+        <!-- Status if offline or stale -->
+    {% if isOffline %}
+    <span class="label label--xxxsmall text--center">OFFLINE</span>
     {% elsif isStale %}
     <span class="label label--xxsmall"
       >{{ tag.lastUpdated | date: '%d.%m. %H:%M' }}</span

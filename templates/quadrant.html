@@ -12,7 +12,7 @@ Best for: Small corner displays, dashboard quadrants
   %} {% assign isOffline = true %} {% elsif minutesOld > 30 %} {% assign isStale
   = true %} {% endif %}
   <div
-    class="layout layout--col stretch-x gap--xsmall {% if isOffline or isStale or tag.status == 'offline' %}background--muted{% endif %} padding--small rounded--small"
+    class="layout layout--col stretch-x gap--xsmall {% if isOffline or isStale %}background--muted{% endif %} padding--small rounded--small"
   >
     <!-- Location Name with timestamp -->
     <span class="title title--xxxsmall text--center"
@@ -35,7 +35,7 @@ Best for: Small corner displays, dashboard quadrants
     </span>
 
     <!-- Status if offline or stale -->
-    {% if tag.status == 'offline' or isOffline %}
+    {% if isOffline %}
     <span class="label label--xxxsmall text--center">OFFLINE</span>
     {% elsif isStale %}
     <span class="label label--xxxsmall text--center"

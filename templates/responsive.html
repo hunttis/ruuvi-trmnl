@@ -15,7 +15,7 @@ Best for: All display sizes and configurations
   = true %} {% endif %}
 
   <div
-    class="layout layout--col stretch-x gap--xsmall sm:gap--small md:gap--medium lg:gap--large {% if isOffline or isStale or tag.status == 'offline' %}background--muted{% endif %} padding--small sm:padding--medium md:padding--large lg:padding--xlarge rounded--small md:rounded--medium lg:rounded--large"
+    class="layout layout--col stretch-x gap--xsmall sm:gap--small md:gap--medium lg:gap--large {% if isOffline or isStale %}background--muted{% endif %} padding--small sm:padding--medium md:padding--large lg:padding--xlarge rounded--small md:rounded--medium lg:rounded--large"
   >
     <!-- Location Name with timestamp -->
     <span
@@ -51,7 +51,7 @@ Best for: All display sizes and configurations
     </span>
 
     <!-- Status if offline or stale -->
-    {% if tag.status == 'offline' or isOffline %}
+    {% if isOffline %}
     <span
       class="label label--xxxsmall sm:label--xxsmall md:label--xsmall lg:label--small text--center"
       >OFFLINE</span

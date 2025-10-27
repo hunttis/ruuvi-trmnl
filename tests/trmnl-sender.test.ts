@@ -167,7 +167,6 @@ describe("TrmnlWebhookSender", () => {
         name: tag.name,
         temperature: tag.temperature,
         humidity: tag.humidity,
-        status: tag.status,
         lastUpdated: tag.lastUpdated,
         ...(tag.lastTemperatureUpdate && {
           lastTemperatureUpdate: tag.lastTemperatureUpdate,
