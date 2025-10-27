@@ -259,7 +259,7 @@ export class ConsoleDisplay {
 
     if (this.status.tags && this.status.tags.length > 0) {
       lines.push("");
-      lines.push("🌡️ Sensor Readings");
+      lines.push("🌡 Sensor Readings");
 
       for (const tag of this.status.tags) {
         const temp =
