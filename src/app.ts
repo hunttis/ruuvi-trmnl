@@ -19,7 +19,6 @@ export class RuuviTrmnlApp {
   private readonly useConsoleDisplay: boolean;
   private lastResponseCode: number | undefined;
   private lastResponseMessage: string | undefined;
-  private isFirstSend: boolean = true;
   private lastSentData: any = null;
   private rateLimitedUntil: number = 0;
   private readonly rateLimitCooldown: number = 10 * 60 * 1000; // 10 minutes
@@ -245,20 +244,7 @@ export class RuuviTrmnlApp {
       const now = Date.now();
       const timeSinceLastSend = now - this.lastSentTime;
 
-      // Always enforce the 10-minute interval
-      if (this.lastSentTime > 0 && timeSinceLastSend < this.minSendInterval) {
-        this.updateConsoleDisplay();
-        return;
-      }
-
-      const hasChanges = this.ruuviCollector.hasChangedConfiguredTags();
-
-      if (!hasChanges && !this.isFirstSend) {
-        this.updateConsoleDisplay();
-        return;
-      }
-
-      // Check if we're currently rate limited
+      // Check if we're currently rate limited first
       if (this.isRateLimited()) {
         const remainingTime = Math.ceil(
           this.getRateLimitRemainingTime() / 1000
@@ -266,6 +252,24 @@ export class RuuviTrmnlApp {
         this.updateConsoleDisplay(
           `🚫 Rate limited - ${remainingTime}s remaining`
         );
+        return;
+      }
+
+      const hasChanges = this.ruuviCollector.hasChangedConfiguredTags();
+
+      // Don't send if: we have a lastSentTime, it's been less than 10 minutes, and there are no changes
+      if (
+        this.lastSentTime > 0 &&
+        timeSinceLastSend < this.minSendInterval &&
+        !hasChanges
+      ) {
+        this.updateConsoleDisplay();
+        return;
+      }
+
+      // After 10 minutes, send even if no changes (unless first send with no changes)
+      if (!hasChanges && this.lastSentTime === 0) {
+        this.updateConsoleDisplay();
         return;
       }
 
@@ -340,7 +344,6 @@ export class RuuviTrmnlApp {
         this.ruuviCollector.markTagsAsSent(existingTagIds);
       }
 
-      this.isFirstSend = false;
       this.updateConsoleDisplay();
     } catch (error: any) {
       this.updateConsoleDisplay(
