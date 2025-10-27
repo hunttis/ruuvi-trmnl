@@ -273,10 +273,15 @@ export class ConsoleDisplay {
         const age = this.getDataAge(tag.lastUpdated);
         const statusIcon = this.getStatusIcon(tag.status);
 
+        // Build the line with proper visual width padding
+        const nameWithIcon = `${statusIcon} ${tag.name}`;
+        const paddedName = this.padToWidth(nameWithIcon, 15); // icon(2) + space(1) + name(12)
+        const paddedTemp = temp.padStart(7);
+        const paddedHumidity = humidity.padStart(5);
+        const paddedBattery = battery.padStart(6);
+        
         lines.push(
-          `   ${statusIcon} ${tag.name.padEnd(12)} ${temp.padStart(
-            7
-          )} ${humidity.padStart(5)} ${battery.padStart(6)} (${age})`
+          `   ${paddedName} ${paddedTemp} ${paddedHumidity} ${paddedBattery} (${age})`
         );
       }
     }
