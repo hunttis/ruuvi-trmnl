@@ -6,6 +6,9 @@ module.exports = {
   transform: {
     "^.+\\.ts$": "ts-jest",
   },
+  transformIgnorePatterns: [
+    "node_modules/(?!(string-width|strip-ansi|ansi-regex|char-regex|emoji-regex)/)",
+  ],
   collectCoverageFrom: [
     "src/**/*.ts",
     "!src/**/*.d.ts",

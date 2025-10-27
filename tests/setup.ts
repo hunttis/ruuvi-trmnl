@@ -1,5 +1,28 @@
 // Test setup file
 
+// Mock string-width to avoid ES module issues
+jest.mock("string-width", () => ({
+  default: jest.fn((str: string) => {
+    // Simple approximation: count emojis as 2, regular chars as 1
+    let width = 0;
+    for (const char of str) {
+      const code = char.codePointAt(0) || 0;
+      // Emoji range and other wide characters
+      if (
+        code >= 0x1f300 ||
+        code >= 0x2600 ||
+        code === 0x2705 ||
+        code === 0x274c
+      ) {
+        width += 2;
+      } else {
+        width += 1;
+      }
+    }
+    return width;
+  }),
+}));
+
 // Mock console methods to reduce noise in tests
 global.console = {
   ...console,

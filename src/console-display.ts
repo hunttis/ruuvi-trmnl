@@ -1,4 +1,5 @@
 import { RuuviTagData } from "./types";
+import stringWidth from "string-width";
 
 export interface AppStatus {
   isRunning: boolean;
@@ -109,6 +110,12 @@ export class ConsoleDisplay {
     this.status = { ...this.status, ...status };
   }
 
+  private padToWidth(str: string, targetWidth: number): string {
+    const currentWidth = stringWidth(str);
+    const padding = Math.max(0, targetWidth - currentWidth);
+    return str + " ".repeat(padding);
+  }
+
   private render(): void {
     const width = process.stdout.columns || 120;
     const leftColumnWidth = Math.floor(width * 0.6);
@@ -132,8 +139,8 @@ export class ConsoleDisplay {
     for (let i = 0; i < maxLines; i++) {
       const leftLine = i < leftLines.length ? (leftLines[i] ?? "") : "";
       const rightLine = i < rightLines.length ? (rightLines[i] ?? "") : "";
-      const paddedLeft = leftLine.padEnd(leftColumnWidth - 1);
-      const paddedRight = rightLine.padEnd(rightColumnWidth);
+      const paddedLeft = this.padToWidth(leftLine, leftColumnWidth - 1);
+      const paddedRight = this.padToWidth(rightLine, rightColumnWidth);
       lines.push(`${paddedLeft} │ ${paddedRight}`);
     }
 
@@ -141,8 +148,8 @@ export class ConsoleDisplay {
     const targetContentLines = 20;
     while (lines.length - 5 < targetContentLines) {
       // -5 for header lines
-      const paddedLeft = "".padEnd(leftColumnWidth - 1);
-      const paddedRight = "".padEnd(rightColumnWidth);
+      const paddedLeft = this.padToWidth("", leftColumnWidth - 1);
+      const paddedRight = this.padToWidth("", rightColumnWidth);
       lines.push(`${paddedLeft} │ ${paddedRight}`);
     }
 
