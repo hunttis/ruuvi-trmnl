@@ -130,8 +130,8 @@ export class ConsoleDisplay {
 
     const maxLines = Math.max(leftLines.length, rightLines.length);
     for (let i = 0; i < maxLines; i++) {
-      const leftLine = leftLines[i] || "";
-      const rightLine = rightLines[i] || "";
+      const leftLine = i < leftLines.length ? (leftLines[i] ?? "") : "";
+      const rightLine = i < rightLines.length ? (rightLines[i] ?? "") : "";
       const paddedLeft = leftLine.padEnd(leftColumnWidth - 1);
       const paddedRight = rightLine.padEnd(rightColumnWidth);
       lines.push(`${paddedLeft} │ ${paddedRight}`);
