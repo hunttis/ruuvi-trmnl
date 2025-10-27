@@ -81,6 +81,22 @@ export class RuuviTrmnlApp {
     }
     await this.ruuviCollector.initialize();
 
+    // Load the most recent sent time from cache
+    const cachedLastSentTime = this.ruuviCollector.getMostRecentSentTime();
+    if (cachedLastSentTime > 0) {
+      this.lastSentTime = cachedLastSentTime;
+      const minutesSinceLastSend = Math.floor(
+        (Date.now() - cachedLastSentTime) / (60 * 1000)
+      );
+      if (this.useConsoleDisplay) {
+        this.updateConsoleDisplay(
+          `📅 Last send was ${minutesSinceLastSend} minute(s) ago`
+        );
+      } else {
+        console.log(`📅 Last send was ${minutesSinceLastSend} minute(s) ago`);
+      }
+    }
+
     if (this.useConsoleDisplay) {
       this.updateConsoleDisplay("🔍 Starting RuuviTag scanning...");
     } else {
@@ -226,17 +242,18 @@ export class RuuviTrmnlApp {
 
   private async sendDataCycle(): Promise<void> {
     try {
-      const hasChanges = this.ruuviCollector.hasChangedConfiguredTags();
+      const now = Date.now();
+      const timeSinceLastSend = now - this.lastSentTime;
 
-      if (!hasChanges && !this.isFirstSend) {
+      // Always enforce the 10-minute interval
+      if (this.lastSentTime > 0 && timeSinceLastSend < this.minSendInterval) {
         this.updateConsoleDisplay();
         return;
       }
 
-      const now = Date.now();
-      const timeSinceLastSend = now - this.lastSentTime;
+      const hasChanges = this.ruuviCollector.hasChangedConfiguredTags();
 
-      if (this.lastSentTime > 0 && timeSinceLastSend < this.minSendInterval) {
+      if (!hasChanges && !this.isFirstSend) {
         this.updateConsoleDisplay();
         return;
       }
@@ -392,7 +409,7 @@ export class RuuviTrmnlApp {
 
       const timeSinceLastSend = now - this.lastSentTime;
 
-      // Show warning if sending too frequently, but still allow the send
+      // Show warning if sending too frequently, but still allow the force send
       if (this.lastSentTime > 0 && timeSinceLastSend < this.minSendInterval) {
         const remainingTime = Math.ceil(
           (this.minSendInterval - timeSinceLastSend) / 1000

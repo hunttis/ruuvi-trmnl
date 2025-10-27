@@ -171,6 +171,21 @@ export class CacheManager {
     return { totalTags, allowedTags, pendingSend };
   }
 
+  public getMostRecentSentTime(): number {
+    let mostRecent = 0;
+
+    for (const entry of Object.values(this.cache)) {
+      if (entry.lastSent) {
+        const sentTime = new Date(entry.lastSent).getTime();
+        if (sentTime > mostRecent) {
+          mostRecent = sentTime;
+        }
+      }
+    }
+
+    return mostRecent;
+  }
+
   private async saveToFile(): Promise<void> {
     try {
       const cacheData = {

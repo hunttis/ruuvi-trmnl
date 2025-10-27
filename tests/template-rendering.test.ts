@@ -109,9 +109,7 @@ describe("Template Rendering", () => {
             humidity: 51.2,
             battery: 2920,
             status: "stale",
-            lastUpdated: new Date(
-              Date.now() - 2 * 60 * 60 * 1000
-            ).toISOString(), // 2 hours ago
+            lastUpdated: new Date(Date.now() - 45 * 60 * 1000).toISOString(), // 45 minutes ago (stale but not offline)
           },
           {
             name: "Kitchen",
@@ -136,11 +134,11 @@ describe("Template Rendering", () => {
       expect(renderedHtml).toContain("22.5");
       expect(renderedHtml).toContain("46%"); // 45.8 rounded to 46
 
-      // Verify that stale sensor is rendered with timestamp in title (sensor is 2 hours old, shows time)
+      // Verify that stale sensor is rendered with timestamp in title (sensor is 45 min old)
       expect(renderedHtml).toContain("Bedroom"); // "Bedroom" shown with timestamp
       expect(renderedHtml).toContain("19.8");
       expect(renderedHtml).toContain("51%"); // 51.2 rounded to 51
-      // Should show timestamp in title since sensor is 2 hours old
+      // Should show timestamp in title since sensor is stale (45 minutes old)
       expect(renderedHtml).toMatch(/Bedroom\s+\(\d{2}:\d{2}\)/); // Bedroom with timestamp in brackets
 
       // Verify that offline sensor is handled appropriately

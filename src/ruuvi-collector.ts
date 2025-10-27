@@ -99,16 +99,9 @@ export class RuuviCollector {
 
   public getActiveTagData(): RuuviTagData[] {
     const config = configManager.getConfig();
-    const staleThreshold = Date.now() - config.ruuvi.dataRetentionTime;
     const activeTags: RuuviTagData[] = [];
 
     for (const [tagId, data] of this.tagData.entries()) {
-      const lastUpdated = new Date(data.lastUpdated).getTime();
-
-      if (lastUpdated < staleThreshold) {
-        this.tagData.set(tagId, { ...data, status: "stale" });
-      }
-
       if (data.status !== "offline") {
         activeTags.push(data);
       }
@@ -127,17 +120,27 @@ export class RuuviCollector {
     activeCount: number;
     staleCount: number;
   } {
-    const active = Array.from(this.tagData.values()).filter(
-      (tag) => tag.status === "active"
-    );
-    const stale = Array.from(this.tagData.values()).filter(
-      (tag) => tag.status === "stale"
-    );
+    const config = configManager.getConfig();
+    const staleThreshold = Date.now() - config.ruuvi.dataRetentionTime;
+
+    let activeCount = 0;
+    let staleCount = 0;
+
+    for (const data of this.tagData.values()) {
+      if (data.status === "offline") continue;
+
+      const lastUpdated = new Date(data.lastUpdated).getTime();
+      if (lastUpdated < staleThreshold) {
+        staleCount++;
+      } else {
+        activeCount++;
+      }
+    }
 
     return {
       totalDiscovered: this.discoveredTags.size,
-      activeCount: active.length,
-      staleCount: stale.length,
+      activeCount,
+      staleCount,
     };
   }
 
@@ -183,6 +186,10 @@ export class RuuviCollector {
     const allowedTagIds = configManager.getOrderedTagIds();
 
     return this.cacheManager.getCacheStatsForAllowedTags(allowedTagIds);
+  }
+
+  public getMostRecentSentTime(): number {
+    return this.cacheManager.getMostRecentSentTime();
   }
 
   public async saveCache(): Promise<void> {

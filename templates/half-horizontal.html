@@ -5,16 +5,18 @@ Best for: Half-width displays, side panels
 -->
 
 <div class="layout layout--row layout--stretch-x gap--medium">
-  {% for tag in ruuvi_tags %}
+  {% for tag in ruuvi_tags %} {% assign now = 'now' | date: '%s' %} {% assign
+  lastUpdate = tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%s'
+  %} {% assign minutesOld = now | minus: lastUpdate | divided_by: 60 %} {%
+  assign isOffline = false %} {% assign isStale = false %} {% if minutesOld > 60
+  %} {% assign isOffline = true %} {% elsif minutesOld > 30 %} {% assign isStale
+  = true %} {% endif %}
   <div
-    class="layout layout--col stretch-x gap--xsmall text--center {% if tag.status == 'stale' or tag.status == 'offline' %}background--muted{% endif %} padding--small rounded--small"
+    class="layout layout--col gap--xsmall {% if isOffline or isStale or tag.status == 'offline' %}background--muted{% endif %} padding--small rounded--small"
   >
     <!-- Location Name with timestamp -->
-    {% assign now = 'now' | date: '%s' %} {% assign lastUpdate =
-    tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%s' %} {%
-    assign minutesOld = now | minus: lastUpdate | divided_by: 60 %}
     <span class="title title--small"
-      >{{ tag.name }}{% if minutesOld > 30 and tag.temperature %} ({{
+      >{{ tag.name }}{% if isStale and tag.temperature %} ({{
       tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%H:%M' }}){%
       endif %}</span
     >
@@ -37,12 +39,12 @@ Best for: Half-width displays, side panels
     </div>
 
     <!-- Status if offline or stale -->
-    {% if tag.status == 'stale' %}
+    {% if tag.status == 'offline' or isOffline %}
+    <span class="label label--xxsmall">OFFLINE</span>
+    {% elsif isStale %}
     <span class="label label--xxsmall"
       >{{ tag.lastUpdated | date: '%d.%m. %H:%M' }}</span
     >
-    {% elsif tag.status == 'offline' %}
-    <span class="label label--xxsmall">OFFLINE</span>
     {% endif %}
   </div>
   {% endfor %}

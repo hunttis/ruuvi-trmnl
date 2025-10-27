@@ -5,16 +5,18 @@ Shows timestamps only when sensor quiet for 30+ minutes
 -->
 
 <div class="layout layout--row layout--stretch-x gap--large">
-  {% for tag in ruuvi_tags %}
+  {% for tag in ruuvi_tags %} {% assign now = 'now' | date: '%s' %} {% assign
+  lastUpdate = tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%s'
+  %} {% assign minutesOld = now | minus: lastUpdate | divided_by: 60 %} {%
+  assign isOffline = false %} {% assign isStale = false %} {% if minutesOld > 60
+  %} {% assign isOffline = true %} {% elsif minutesOld > 30 %} {% assign isStale
+  = true %} {% endif %}
   <div
-    class="layout layout--col stretch-x gap--small text--center {% if tag.status == 'stale' or tag.status == 'offline' %}background--muted{% endif %} padding--medium rounded--medium"
+    class="layout layout--col gap--small {% if isOffline or isStale or tag.status == 'offline' %}background--muted{% endif %} padding--medium rounded--small"
   >
     <!-- Location Name with timestamp - Large -->
-    {% assign now = 'now' | date: '%s' %} {% assign lastUpdate =
-    tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%s' %} {%
-    assign minutesOld = now | minus: lastUpdate | divided_by: 60 %}
     <span class="title title--large"
-      >{{ tag.name }}{% if minutesOld > 30 and tag.temperature %} ({{
+      >{{ tag.name }}{% if isStale and tag.temperature %} ({{
       tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%H:%M' }}){%
       endif %}</span
     >
@@ -37,12 +39,12 @@ Shows timestamps only when sensor quiet for 30+ minutes
     </div>
 
     <!-- Status if offline or stale -->
-    {% if tag.status == 'stale' %}
+    {% if tag.status == 'offline' or isOffline %}
+    <span class="label label--small label--underline">OFFLINE</span>
+    {% elsif isStale %}
     <span class="label label--small label--underline"
       >{{ tag.lastUpdated | date: '%d.%m.%Y %H:%M' }}</span
     >
-    {% elsif tag.status == 'offline' %}
-    <span class="label label--small label--underline">OFFLINE</span>
     {% endif %}
   </div>
   {% endfor %}
