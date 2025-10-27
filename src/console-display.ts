@@ -137,8 +137,8 @@ export class ConsoleDisplay {
 
     const maxLines = Math.max(leftLines.length, rightLines.length);
     for (let i = 0; i < maxLines; i++) {
-      const leftLine = i < leftLines.length ? (leftLines[i] ?? "") : "";
-      const rightLine = i < rightLines.length ? (rightLines[i] ?? "") : "";
+      const leftLine = i < leftLines.length ? leftLines[i] ?? "" : "";
+      const rightLine = i < rightLines.length ? rightLines[i] ?? "" : "";
       const paddedLeft = this.padToWidth(leftLine, leftColumnWidth - 1);
       const paddedRight = this.padToWidth(rightLine, rightColumnWidth);
       lines.push(`${paddedLeft} │ ${paddedRight}`);
@@ -279,7 +279,7 @@ export class ConsoleDisplay {
         const paddedTemp = temp.padStart(7);
         const paddedHumidity = humidity.padStart(5);
         const paddedBattery = battery.padStart(6);
-        
+
         lines.push(
           `   ${paddedName} ${paddedTemp} ${paddedHumidity} ${paddedBattery} (${age})`
         );
