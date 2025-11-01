@@ -244,18 +244,20 @@ export class RuuviTrmnlApp {
       const now = Date.now();
       const timeSinceLastSend = now - this.lastSentTime;
 
+      Logger.log(`[DEBUG] sendDataCycle - lastSentTime: ${this.lastSentTime}, timeSinceLastSend: ${Math.floor(timeSinceLastSend / 1000)}s, minInterval: ${Math.floor(this.minSendInterval / 1000)}s`);
+
       // Check if we're currently rate limited first
       if (this.isRateLimited()) {
-        const remainingTime = Math.ceil(
-          this.getRateLimitRemainingTime() / 1000
-        );
+        const remainingMinutes = Math.ceil(this.getRateLimitRemainingTime());
+        Logger.log(`[DEBUG] Rate limited - ${remainingMinutes} minutes remaining`);
         this.updateConsoleDisplay(
-          `🚫 Rate limited - ${remainingTime}s remaining`
+          `🚫 Rate limited - ${remainingMinutes}m remaining`
         );
         return;
       }
 
       const hasChanges = this.ruuviCollector.hasChangedConfiguredTags();
+      Logger.log(`[DEBUG] hasChanges: ${hasChanges}`);
 
       // Don't send if: we have a lastSentTime, it's been less than 10 minutes, and there are no changes
       if (
@@ -263,15 +265,19 @@ export class RuuviTrmnlApp {
         timeSinceLastSend < this.minSendInterval &&
         !hasChanges
       ) {
+        Logger.log(`[DEBUG] Not sending: too soon and no changes`);
         this.updateConsoleDisplay();
         return;
       }
 
       // After 10 minutes, send even if no changes (unless first send with no changes)
       if (!hasChanges && this.lastSentTime === 0) {
+        Logger.log(`[DEBUG] Not sending: first send with no changes`);
         this.updateConsoleDisplay();
         return;
       }
+
+      Logger.log(`[DEBUG] Proceeding to send data`);
 
       const config = configManager.getConfig();
       const allConfiguredTagIds = configManager.getOrderedTagIds();
@@ -401,11 +407,9 @@ export class RuuviTrmnlApp {
 
       // Check if we're currently rate limited - this blocks even force sends
       if (this.isRateLimited()) {
-        const remainingTime = Math.ceil(
-          this.getRateLimitRemainingTime() / 1000
-        );
+        const remainingMinutes = Math.ceil(this.getRateLimitRemainingTime());
         this.updateConsoleDisplay(
-          `🚫 Rate limited - cannot send for ${remainingTime}s`
+          `🚫 Rate limited - cannot send for ${remainingMinutes}m`
         );
         return;
       }
