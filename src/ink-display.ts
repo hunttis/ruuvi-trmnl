@@ -1,9 +1,9 @@
 import React from "react";
 import { RuuviTagData } from "./types";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const dashboardModule = require("./ink-dashboard.js");
-const createDashboard = dashboardModule.createDashboard;
+// We'll dynamically import this later since ink is ESM
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let createDashboard: any;
 
 export interface AppStatus {
   isRunning: boolean;
@@ -60,9 +60,16 @@ export class InkDisplay {
   }
 
   public async start(): Promise<void> {
+    // Dynamically import the ESM ink module
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ink: any = await (eval('import("ink")') as Promise<any>);
     const render = ink.render;
+
+    // Import the compiled dashboard component
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const dashboardModule = require("./ink-dashboard");
+    createDashboard = dashboardModule.createDashboard;
+
     const DashboardComponent = await createDashboard(ink);
 
     const App = () => {

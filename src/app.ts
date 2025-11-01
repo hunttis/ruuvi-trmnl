@@ -40,12 +40,23 @@ export class RuuviTrmnlApp {
     this.refreshInterval = config.trmnl.refreshInterval * 1000;
   }
 
+  // Helper to format dates as yy-MM-dd hh:mm
+  private formatDateTime(isoString: string): string {
+    const date = new Date(isoString);
+    const yy = date.getFullYear().toString().slice(-2);
+    const MM = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const hh = String(date.getHours()).padStart(2, "0");
+    const mm = String(date.getMinutes()).padStart(2, "0");
+    return `${yy}-${MM}-${dd} ${hh}:${mm}`;
+  }
+
   public async start(): Promise<void> {
     if (this.isRunning) {
       if (this.useConsoleDisplay) {
-        this.updateConsoleDisplay("⚠️  App is already running");
+        this.updateConsoleDisplay("⚡ App is already running");
       } else {
-        console.log("⚠️  App is already running");
+        console.log("⚡ App is already running");
       }
       return;
     }
@@ -63,12 +74,12 @@ export class RuuviTrmnlApp {
     if (!connectionOk) {
       if (this.useConsoleDisplay) {
         this.updateConsoleDisplay(
-          "⚠️ TRMNL connection test failed. Will try sending data anyway.",
+          "⚡ TRMNL connection test failed. Will try sending data anyway.",
           true
         );
       } else {
-        console.warn(
-          "⚠️ TRMNL connection test failed. Will try sending data anyway."
+        Logger.warn(
+          "⚡ TRMNL connection test failed. Will try sending data anyway."
         );
       }
     }
@@ -313,12 +324,21 @@ export class RuuviTrmnlApp {
       // Filter data to only include template-required fields
       const filteredDataset = this.filterTagDataForTemplate(completeDataset);
 
+      // Format the filtered dataset for display
+      const formattedDataset = filteredDataset.map((tag) => ({
+        ...tag,
+        lastUpdated: this.formatDateTime(tag.lastUpdated),
+        ...(tag.lastTemperatureUpdate && {
+          lastTemperatureUpdate: this.formatDateTime(tag.lastTemperatureUpdate),
+        }),
+      }));
+
       // Store the data that will be sent for display
       this.lastSentData = {
         merge_variables: {
-          ruuvi_tags: filteredDataset,
-          lastRefresh: new Date().toISOString(),
-          totalTags: filteredDataset.length,
+          ruuvi_tags: formattedDataset,
+          lastRefresh: this.formatDateTime(new Date().toISOString()),
+          totalTags: formattedDataset.length,
         },
       };
 
@@ -374,9 +394,11 @@ export class RuuviTrmnlApp {
   private filterTagDataForTemplate(tags: RuuviTagData[]): any[] {
     return tags.map((tag) => ({
       name: tag.name,
-      temperature: tag.temperature,
+      temperature:
+        tag.temperature !== undefined
+          ? Number(tag.temperature.toFixed(1))
+          : undefined,
       humidity: tag.humidity,
-      status: tag.status,
       lastUpdated: tag.lastUpdated,
       ...(tag.lastTemperatureUpdate && {
         lastTemperatureUpdate: tag.lastTemperatureUpdate,
@@ -414,7 +436,7 @@ export class RuuviTrmnlApp {
           (this.minSendInterval - timeSinceLastSend) / 1000
         );
         this.updateConsoleDisplay(
-          `⚠️ Force sending (recommended wait: ${remainingTime}s)`
+          `⚡ Force sending (recommended wait: ${remainingTime}s)`
         );
       } else {
         this.updateConsoleDisplay("🚀 Force sending data to TRMNL...");
@@ -463,12 +485,21 @@ export class RuuviTrmnlApp {
       // Filter data to only include template-required fields
       const filteredDataset = this.filterTagDataForTemplate(completeDataset);
 
+      // Format the filtered dataset for display
+      const formattedDataset = filteredDataset.map((tag) => ({
+        ...tag,
+        lastUpdated: this.formatDateTime(tag.lastUpdated),
+        ...(tag.lastTemperatureUpdate && {
+          lastTemperatureUpdate: this.formatDateTime(tag.lastTemperatureUpdate),
+        }),
+      }));
+
       // Store the data that will be sent for display
       this.lastSentData = {
         merge_variables: {
-          ruuvi_tags: filteredDataset,
-          lastRefresh: new Date().toISOString(),
-          totalTags: filteredDataset.length,
+          ruuvi_tags: formattedDataset,
+          lastRefresh: this.formatDateTime(new Date().toISOString()),
+          totalTags: formattedDataset.length,
         },
       };
 
