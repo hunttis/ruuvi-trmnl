@@ -2,13 +2,13 @@ import { configManager } from "./config";
 import { RuuviCollector } from "./ruuvi-collector";
 import { TrmnlWebhookSender } from "./trmnl-sender";
 import { RuuviTagData } from "./types";
-import { ConsoleDisplay, AppStatus } from "./console-display";
+import { InkDisplay, AppStatus } from "./ink-display";
 import { Logger } from "./logger";
 
 export class RuuviTrmnlApp {
   private ruuviCollector: RuuviCollector;
   private trmnlSender: TrmnlWebhookSender;
-  private consoleDisplay: ConsoleDisplay;
+  private consoleDisplay: InkDisplay;
   private intervalId: NodeJS.Timeout | null = null;
   private displayUpdateIntervalId: NodeJS.Timeout | null = null;
   private isRunning = false;
@@ -27,7 +27,7 @@ export class RuuviTrmnlApp {
   constructor(useConsoleDisplay: boolean = true, manualMode: boolean = false) {
     this.ruuviCollector = new RuuviCollector();
     this.trmnlSender = new TrmnlWebhookSender();
-    this.consoleDisplay = new ConsoleDisplay();
+    this.consoleDisplay = new InkDisplay();
     this.useConsoleDisplay = useConsoleDisplay;
     this.manualMode = manualMode;
 
@@ -53,7 +53,7 @@ export class RuuviTrmnlApp {
     this.startTime = new Date();
 
     if (this.useConsoleDisplay) {
-      this.consoleDisplay.start();
+      await this.consoleDisplay.start();
       this.updateConsoleDisplay("🚀 Starting RuuviTRMNL application...");
     } else {
       console.log("🚀 Starting RuuviTRMNL application...");
