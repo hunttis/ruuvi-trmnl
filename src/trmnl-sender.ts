@@ -52,20 +52,34 @@ export class TrmnlWebhookSender {
   }
 
   private formatPayload(tagData: RuuviTagData[]): TrmnlWebhookPayload {
+    // Helper to format dates as yy-MM-dd hh:mm
+    const formatDateTime = (isoString: string): string => {
+      const date = new Date(isoString);
+      const yy = date.getFullYear().toString().slice(-2);
+      const MM = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      const hh = String(date.getHours()).padStart(2, "0");
+      const mm = String(date.getMinutes()).padStart(2, "0");
+      return `${yy}-${MM}-${dd} ${hh}:${mm}`;
+    };
+
     // Filter to only include template-required fields
     const filteredTags = tagData.map((tag) => ({
       name: tag.name,
-      temperature: tag.temperature,
+      temperature:
+        tag.temperature !== undefined
+          ? Number(tag.temperature.toFixed(1))
+          : undefined,
       humidity: tag.humidity,
-      lastUpdated: tag.lastUpdated,
+      lastUpdated: formatDateTime(tag.lastUpdated),
       ...(tag.lastTemperatureUpdate && {
-        lastTemperatureUpdate: tag.lastTemperatureUpdate,
+        lastTemperatureUpdate: formatDateTime(tag.lastTemperatureUpdate),
       }),
     }));
 
     const collectionData: RuuviCollectionData = {
       ruuvi_tags: filteredTags,
-      lastRefresh: new Date().toISOString(),
+      lastRefresh: formatDateTime(new Date().toISOString()),
       totalTags: filteredTags.length,
     };
 

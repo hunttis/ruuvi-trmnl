@@ -9,6 +9,9 @@ module.exports = {
   transformIgnorePatterns: [
     "node_modules/(?!(string-width|strip-ansi|ansi-regex|char-regex|emoji-regex)/)",
   ],
+  moduleNameMapper: {
+    "^./ink-display(\\.js)?$": "<rootDir>/tests/__mocks__/ink-display.ts",
+  },
   collectCoverageFrom: [
     "src/**/*.ts",
     "!src/**/*.d.ts",

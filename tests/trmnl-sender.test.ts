@@ -130,8 +130,8 @@ describe("TrmnlWebhookSender", () => {
     }, 1000);
 
     it("should log payload size warning for large payloads", async () => {
-      // Create a large dataset
-      const largeTagData = Array(20).fill(mockTagData[0]);
+      // Create a large dataset - increased from 20 to 30 to account for shorter date format
+      const largeTagData = Array(30).fill(mockTagData[0]);
 
       const mockResponse = {
         ok: true,
@@ -162,14 +162,28 @@ describe("TrmnlWebhookSender", () => {
       const call = mockFetch.mock.calls[0];
       const body = JSON.parse(call![1]!.body as string);
 
-      // Expect filtered data with only template-required fields
+      // Helper to format dates as yy-MM-dd hh:mm
+      const formatDateTime = (isoString: string): string => {
+        const date = new Date(isoString);
+        const yy = date.getFullYear().toString().slice(-2);
+        const MM = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
+        const hh = String(date.getHours()).padStart(2, "0");
+        const mm = String(date.getMinutes()).padStart(2, "0");
+        return `${yy}-${MM}-${dd} ${hh}:${mm}`;
+      };
+
+      // Expect filtered data with only template-required fields and formatted dates
       const expectedFilteredData = mockTagData.map((tag) => ({
         name: tag.name,
-        temperature: tag.temperature,
+        temperature:
+          tag.temperature !== undefined
+            ? Number(tag.temperature.toFixed(1))
+            : undefined,
         humidity: tag.humidity,
-        lastUpdated: tag.lastUpdated,
+        lastUpdated: formatDateTime(tag.lastUpdated),
         ...(tag.lastTemperatureUpdate && {
-          lastTemperatureUpdate: tag.lastTemperatureUpdate,
+          lastTemperatureUpdate: formatDateTime(tag.lastTemperatureUpdate),
         }),
       }));
 
@@ -180,7 +194,10 @@ describe("TrmnlWebhookSender", () => {
           totalTags: 2,
         },
       });
-      expect(new Date(body.merge_variables.lastRefresh)).toBeInstanceOf(Date);
+      // Verify lastRefresh is in the correct format (yy-MM-dd hh:mm)
+      expect(body.merge_variables.lastRefresh).toMatch(
+        /^\d{2}-\d{2}-\d{2} \d{2}:\d{2}$/
+      );
     });
 
     it("should include merge strategy if not default", async () => {
