@@ -293,10 +293,9 @@ export class RuuviTrmnlApp {
           const age = now - new Date(existingTag.lastUpdated).getTime();
 
           if (age > maxAge) {
+            // Tag is stale, but keep all data including temperature/humidity
             completeDataset.push({
-              id: shortId,
-              name: aliasName,
-              lastUpdated: existingTag.lastUpdated,
+              ...existingTag,
               status: "stale",
             });
           } else {
@@ -454,10 +453,9 @@ export class RuuviTrmnlApp {
           const age = now - new Date(existingTag.lastUpdated).getTime();
 
           if (age > maxAge) {
+            // Tag is stale, but keep all data including temperature/humidity
             completeDataset.push({
-              id: shortId,
-              name: aliasName,
-              lastUpdated: existingTag.lastUpdated,
+              ...existingTag,
               status: "stale",
             });
           } else {
