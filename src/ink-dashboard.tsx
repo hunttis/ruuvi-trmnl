@@ -95,7 +95,7 @@ export async function createDashboard(ink: any) {
         {/* Header */}
         <Box justifyContent="center" marginBottom={1}>
           <Text bold color="cyan">
-            🏷️ RuuviTRMNL Dashboard
+            🏷 RuuviTRMNL Dashboard
           </Text>
         </Box>
 

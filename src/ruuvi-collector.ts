@@ -46,7 +46,7 @@ export class RuuviCollector {
     });
 
     ruuvi.on("warning", (message: string) => {
-      Logger.warn(`⚠️  RuuviTag warning: ${message}`);
+      Logger.warn(`⚠  RuuviTag warning: ${message}`);
     });
   }
 
@@ -83,7 +83,7 @@ export class RuuviCollector {
 
   public startScanning(): void {
     if (this.isScanning) {
-      Logger.log("ℹ️  Already scanning...");
+      Logger.log("ℹ  Already scanning...");
       return;
     }
 
@@ -151,7 +151,7 @@ export class RuuviCollector {
       Logger.log(`📋 Snapshot found ${tags.length} tag(s)`);
       return this.getActiveTagData();
     } catch (error) {
-      Logger.log("ℹ️  Snapshot method found no tags (normal if none nearby)");
+      Logger.log("ℹ  Snapshot method found no tags (normal if none nearby)");
       return this.getActiveTagData();
     }
   }

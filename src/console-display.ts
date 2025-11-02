@@ -131,7 +131,7 @@ export class ConsoleDisplay {
     // Combine columns
     const lines: string[] = [];
     lines.push("");
-    lines.push(this.centerText("🏷️ RuuviTRMNL Dashboard", width));
+    lines.push(this.centerText("🏷 RuuviTRMNL Dashboard", width));
     lines.push("");
     lines.push(separator);
 

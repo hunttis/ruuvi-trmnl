@@ -98,7 +98,7 @@ export class TrmnlWebhookSender {
 
     if (payloadSize > 2048) {
       Logger.warn(
-        `⚠️  Payload size (${payloadSize}B) exceeds standard limit (2KB). Consider TRMNL+ or reduce data.`
+        `⚠  Payload size (${payloadSize}B) exceeds standard limit (2KB). Consider TRMNL+ or reduce data.`
       );
     }
 

@@ -5,8 +5,8 @@ import { Logger } from "./logger";
 
 async function main() {
   Logger.log("🚀 Starting RuuviTRMNL in Manual Mode");
-  Logger.log("⌨️  Press SPACE to send data to TRMNL");
-  Logger.log("⌨️  Press Q to quit\n");
+  Logger.log("⌨  Press SPACE to send data to TRMNL");
+  Logger.log("⌨  Press Q to quit\n");
 
   const app = new RuuviTrmnlApp(true, true);
 

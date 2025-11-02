@@ -135,7 +135,7 @@ export class RuuviTrmnlApp {
     } else {
       if (this.useConsoleDisplay) {
         this.updateConsoleDisplay(
-          "⌨️  Manual mode: Press SPACE to send data to TRMNL"
+          "⌨  Manual mode: Press SPACE to send data to TRMNL"
         );
       }
     }
@@ -163,9 +163,9 @@ export class RuuviTrmnlApp {
   public async stop(): Promise<void> {
     if (!this.isRunning) {
       if (this.useConsoleDisplay) {
-        this.updateConsoleDisplay("ℹ️  App is not running");
+        this.updateConsoleDisplay("ℹ  App is not running");
       } else {
-        console.log("ℹ️  App is not running");
+        console.log("ℹ  App is not running");
       }
       return;
     }

@@ -14,7 +14,7 @@ async function inspectCache() {
     console.log(`📁 Total cached tags: ${allTags.length}\n`);
 
     if (allTags.length === 0) {
-      console.log("ℹ️  No cached data found");
+      console.log("ℹ  No cached data found");
       return;
     }
 
@@ -36,7 +36,7 @@ async function inspectCache() {
     console.log();
 
     // Show all cached tags with their status
-    console.log("🏷️  All Cached Tags:");
+    console.log("🏷  All Cached Tags:");
     allTags.forEach((tag) => {
       const isAllowed = allowedTagIds.includes(tag.id);
       const allowedIcon = isAllowed ? "✅" : "❌";

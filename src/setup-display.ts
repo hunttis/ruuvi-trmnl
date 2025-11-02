@@ -165,7 +165,7 @@ export class SetupDisplay {
 
     if (this.status.discoveredTags.size > 0) {
       lines.push("");
-      lines.push("🏷️ Discovered Tags");
+      lines.push("🏷 Discovered Tags");
 
       let index = 1;
       for (const [fullId, tag] of this.status.discoveredTags) {
@@ -219,7 +219,7 @@ export class SetupDisplay {
     lines.push("   R    Refresh display");
     lines.push("");
 
-    lines.push("ℹ️ Instructions");
+    lines.push("ℹ Instructions");
     lines.push("");
     lines.push("   1. Wait for RuuviTags to be discovered");
     lines.push("   2. Press number keys (1-9) to set nicknames");

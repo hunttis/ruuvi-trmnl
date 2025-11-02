@@ -148,7 +148,7 @@ async function createDashboard(ink) {const React = require('react');const React 
 
           <Text bold color="cyan">        return `${Math.floor(age / 60)}m ago`;      return `${Math.floor(age / 60)}m ago`;
 
-            🏷️  RuuviTRMNL Dashboard
+            🏷  RuuviTRMNL Dashboard
 
           </Text>      } else {    } else {
 
@@ -302,7 +302,7 @@ async function createDashboard(ink) {const React = require('react');const React 
 
                 </Text>
 
-                {status.tags.map((tag) => {            🏷️  RuuviTRMNL Dashboard      Box,
+                {status.tags.map((tag) => {            🏷  RuuviTRMNL Dashboard      Box,
 
                   const temp = tag.temperature !== undefined ? `${tag.temperature.toFixed(1)}°C` : 'N/A';
 
@@ -310,7 +310,7 @@ async function createDashboard(ink) {const React = require('react');const React 
 
                   const battery = tag.battery !== undefined ? `${tag.battery.toFixed(2)}V` : 'N/A';
 
-                  const age = getDataAge(tag.lastUpdated);        </Box>      React.createElement(Text, { bold: true, color: 'cyan' }, '🏷️  RuuviTRMNL Dashboard')
+                  const age = getDataAge(tag.lastUpdated);        </Box>      React.createElement(Text, { bold: true, color: 'cyan' }, '🏷  RuuviTRMNL Dashboard')
 
                   const statusIcon = getStatusIcon(tag.status);
 
