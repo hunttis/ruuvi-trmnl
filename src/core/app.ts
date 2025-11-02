@@ -264,28 +264,14 @@ export class RuuviTrmnlApp {
         return;
       }
 
-      const hasChanges = this.ruuviCollector.hasChangedConfiguredTags();
-
-      // If this is the first send and there are no changes, don't send
-      if (!hasChanges && this.lastSentTime === 0) {
+      // Simple rule: Only send if 10 minutes have passed since last send
+      // (or if this is the first send)
+      if (this.lastSentTime > 0 && timeSinceLastSend < this.minSendInterval) {
         this.updateConsoleDisplay();
         return;
       }
 
-      // Don't send if: we've sent before, it's been less than 10 minutes, and there are no changes
-      if (
-        this.lastSentTime > 0 &&
-        timeSinceLastSend < this.minSendInterval &&
-        !hasChanges
-      ) {
-        this.updateConsoleDisplay();
-        return;
-      }
-
-      // If we reach here, either:
-      // 1. There are changes (send immediately)
-      // 2. 10+ minutes have passed since last send (send even without changes)
-      // 3. This is not the first send and we have some data to send
+      // If 10+ minutes have passed (or first send), proceed with sending
 
       const config = configManager.getConfig();
       const allConfiguredTagIds = configManager.getOrderedTagIds();
