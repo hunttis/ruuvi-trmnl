@@ -1,4 +1,4 @@
-import { RuuviTrmnlApp } from "../src/app";
+import { RuuviTrmnlApp } from "../src/core/app";
 
 describe("RuuviTrmnlApp Basic Tests", () => {
   it("should be importable", () => {

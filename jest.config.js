@@ -11,7 +11,7 @@ module.exports = {
   ],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
-    "^./ink-display(\\.js)?$": "<rootDir>/tests/__mocks__/ink-display.ts",
+    "^./ui/ink-display(\\.js)?$": "<rootDir>/tests/__mocks__/ink-display.ts",
   },
   collectCoverageFrom: [
     "src/**/*.ts",

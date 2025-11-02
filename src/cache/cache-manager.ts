@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
-import { RuuviTagData } from "@/types";
-import { Logger } from "@/logger";
+import { RuuviTagData } from "@/lib/types";
+import { Logger } from "@/lib/logger";
 
 export interface CacheEntry {
   data: RuuviTagData;

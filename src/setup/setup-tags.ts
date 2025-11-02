@@ -2,9 +2,9 @@
 
 import * as readline from "readline";
 import * as fs from "fs";
-import { configManager } from "@/config";
-import { RawRuuviTag, RawRuuviData } from "@/types";
-import { SetupDisplay } from "@/setup-display";
+import { configManager } from "@/lib/config";
+import { RawRuuviTag, RawRuuviData } from "@/lib/types";
+import { SetupDisplay } from "@/ui/setup-display";
 
 const ruuvi = require("node-ruuvitag");
 

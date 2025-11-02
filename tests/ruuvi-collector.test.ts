@@ -1,7 +1,7 @@
-import { configManager } from "../src/config";
+import { configManager } from "../src/lib/config";
 
 // Mock the config manager
-jest.mock("../src/config");
+jest.mock("../src/lib/config");
 const mockConfigManager = configManager as jest.Mocked<typeof configManager>;
 
 // Mock the node-ruuvitag module
@@ -42,7 +42,7 @@ describe("RuuviCollector", () => {
   describe("RuuviCollector Module", () => {
     it("should be importable and testable", async () => {
       // Dynamic import to test the module can be loaded
-      const { RuuviCollector } = await import("../src/ruuvi-collector");
+      const { RuuviCollector } = await import("../src/collectors/ruuvi-collector");
       expect(RuuviCollector).toBeDefined();
 
       const collector = new RuuviCollector();
@@ -62,7 +62,7 @@ describe("RuuviCollector", () => {
     });
 
     it("should handle scanning operations without throwing", async () => {
-      const { RuuviCollector } = await import("../src/ruuvi-collector");
+      const { RuuviCollector } = await import("../src/collectors/ruuvi-collector");
       const collector = new RuuviCollector();
 
       // Test scanning methods don't throw errors
@@ -71,7 +71,7 @@ describe("RuuviCollector", () => {
     });
 
     it("should handle snapshot operations", async () => {
-      const { RuuviCollector } = await import("../src/ruuvi-collector");
+      const { RuuviCollector } = await import("../src/collectors/ruuvi-collector");
       const collector = new RuuviCollector();
 
       // Test snapshot method returns array
@@ -80,7 +80,7 @@ describe("RuuviCollector", () => {
     });
 
     it("should properly initialize with empty state", async () => {
-      const { RuuviCollector } = await import("../src/ruuvi-collector");
+      const { RuuviCollector } = await import("../src/collectors/ruuvi-collector");
       const collector = new RuuviCollector();
 
       const initialStats = collector.getStats();

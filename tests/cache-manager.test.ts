@@ -1,5 +1,5 @@
-import { CacheManager } from "../src/cache-manager";
-import { RuuviTagData } from "../src/types";
+import { CacheManager } from "../src/cache/cache-manager";
+import { RuuviTagData } from "../src/lib/types";
 
 // Mock fs for testing
 jest.mock("fs", () => ({

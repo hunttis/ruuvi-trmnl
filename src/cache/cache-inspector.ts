@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { CacheManager } from "@/cache-manager";
-import { configManager } from "@/config";
+import { CacheManager } from "@/cache/cache-manager";
+import { configManager } from "@/lib/config";
 
 async function inspectCache() {
   console.log("🔍 RuuviTRMNL Cache Inspector\n");

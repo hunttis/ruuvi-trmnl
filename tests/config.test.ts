@@ -1,4 +1,4 @@
-import { configManager } from "../src/config";
+import { configManager } from "../src/lib/config";
 import * as fs from "fs";
 import * as path from "path";
 

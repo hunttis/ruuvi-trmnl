@@ -1,9 +1,9 @@
-import { TrmnlWebhookSender } from "../src/trmnl-sender";
-import { configManager, Config } from "../src/config";
-import { RuuviTagData } from "../src/types";
+import { TrmnlWebhookSender } from "../src/trmnl/trmnl-sender";
+import { configManager, Config } from "../src/lib/config";
+import { RuuviTagData } from "../src/lib/types";
 
 // Mock the config manager
-jest.mock("../src/config");
+jest.mock("../src/lib/config");
 const mockConfigManager = configManager as jest.Mocked<typeof configManager>;
 
 // Mock fetch globally - this prevents any real TRMNL API calls during testing

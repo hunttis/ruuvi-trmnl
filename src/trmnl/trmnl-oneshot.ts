@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import { RuuviCollector } from "@/ruuvi-collector";
-import { TrmnlWebhookSender } from "@/trmnl-sender";
-import { configManager } from "@/config";
-import { RuuviTagData } from "@/types";
+import { RuuviCollector } from "@/collectors/ruuvi-collector";
+import { TrmnlWebhookSender } from "@/trmnl/trmnl-sender";
+import { configManager } from "@/lib/config";
+import { RuuviTagData } from "@/lib/types";
 
 interface OneShotOptions {
   timeout?: number;

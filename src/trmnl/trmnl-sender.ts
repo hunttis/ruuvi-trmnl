@@ -1,12 +1,12 @@
-import { configManager } from "@/config";
+import { configManager } from "@/lib/config";
 import {
   TrmnlWebhookPayload,
   TrmnlWebhookResponse,
   RuuviCollectionData,
   RuuviTagData,
-} from "@/types";
-import { Logger } from "@/logger";
-import { ErrorLogger } from "@/error-logger";
+} from "@/lib/types";
+import { Logger } from "@/lib/logger";
+import { ErrorLogger } from "@/lib/error-logger";
 
 export class TrmnlWebhookSender {
   private readonly webhookUrl: string;

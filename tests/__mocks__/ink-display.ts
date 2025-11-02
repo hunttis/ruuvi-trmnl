@@ -1,4 +1,4 @@
-import { AppStatus } from "../../src/ink-display";
+import { AppStatus } from "../../src/ui/ink-display";
 
 export class InkDisplay {
   private status: AppStatus;

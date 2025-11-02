@@ -13,7 +13,7 @@ jest.mock("fs", () => ({
   },
 }));
 
-jest.mock("../src/config", () => ({
+jest.mock("../src/lib/config", () => ({
   configManager: {
     getConfig: jest.fn().mockReturnValue({
       trmnl: {
@@ -35,7 +35,7 @@ jest.mock("node-ruuvitag", () => ({
 describe("Setup Tool", () => {
   describe("Module Loading", () => {
     it("should load setup tool module without errors", () => {
-      expect(() => require("../src/setup-tags")).not.toThrow();
+      expect(() => require("../src/setup/setup-tags")).not.toThrow();
     });
 
     it("should have CLI help functionality", () => {
@@ -46,7 +46,7 @@ describe("Setup Tool", () => {
 
   describe("Integration", () => {
     it("should integrate with existing config system", () => {
-      const { configManager } = require("../src/config");
+      const { configManager } = require("../src/lib/config");
       expect(configManager.getConfig).toBeDefined();
     });
   });

@@ -1,5 +1,5 @@
 import React from "react";
-import { RuuviTagData } from "@/types";
+import { RuuviTagData } from "@/lib/types";
 
 // We'll dynamically import this later since ink is ESM
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
