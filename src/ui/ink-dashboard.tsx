@@ -95,7 +95,7 @@ export async function createDashboard(ink: any) {
         {/* Header */}
         <Box justifyContent="center" marginBottom={1}>
           <Text bold color="cyan">
-            🏷 RuuviTRMNL Dashboard
+            --- RuuviTRMNL Dashboard ---
           </Text>
         </Box>
 
@@ -111,7 +111,7 @@ export async function createDashboard(ink: any) {
               paddingX={1}
             >
               <Text bold color="blue">
-                📊 Application Status
+                -- Application Status --
               </Text>
               <Text>
                 Running:{" "}
@@ -139,7 +139,7 @@ export async function createDashboard(ink: any) {
               paddingX={1}
             >
               <Text bold color="blue">
-                🔗 TRMNL Connection
+                -- TRMNL Connection --
               </Text>
               <Text>Webhook: {maskWebhook(status.webhookInfo.url)}</Text>
               <Text>Strategy: {status.webhookInfo.strategy}</Text>
@@ -185,7 +185,7 @@ export async function createDashboard(ink: any) {
               paddingX={1}
             >
               <Text bold color="blue">
-                📈 Statistics
+                -- Statistics --
               </Text>
               <Text>
                 Discovered Tags: {status.collectorStats.totalDiscovered}
@@ -206,7 +206,7 @@ export async function createDashboard(ink: any) {
                 paddingX={1}
               >
                 <Text bold color="blue">
-                  📊 Sensor Readings
+                  -- Sensor Readings --
                 </Text>
                 {status.tags.map((tag: any) => {
                   const temp =
@@ -259,8 +259,8 @@ export async function createDashboard(ink: any) {
             borderColor="magenta"
             paddingX={1}
           >
-            <Text bold color="blue">
-              📤 Latest TRMNL Data
+            <Text bold color="green">
+              -- Latest TRMNL Data --
             </Text>
             {status.lastSentData ? (
               <Box flexDirection="column">

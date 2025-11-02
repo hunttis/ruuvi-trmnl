@@ -134,7 +134,7 @@ export class SetupDisplay {
     const lines: string[] = [];
 
     lines.push("");
-    lines.push("📊 Scan Status");
+    lines.push("-- Scan Status --");
     lines.push(
       `   Scanning: ${this.status.isScanning ? "✅ Active" : "❌ Stopped"}`
     );
@@ -150,7 +150,7 @@ export class SetupDisplay {
     }
 
     lines.push("");
-    lines.push("📈 Discovery Statistics");
+    lines.push("-- Discovery Statistics --");
     lines.push(`   Total Discovered: ${this.status.discoveredTags.size}`);
 
     const withNicknames = Array.from(
@@ -165,7 +165,7 @@ export class SetupDisplay {
 
     if (this.status.discoveredTags.size > 0) {
       lines.push("");
-      lines.push("🏷 Discovered Tags");
+      lines.push("-- Discovered Tags --");
 
       let index = 1;
       for (const [fullId, tag] of this.status.discoveredTags) {

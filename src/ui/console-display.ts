@@ -131,7 +131,7 @@ export class ConsoleDisplay {
     // Combine columns
     const lines: string[] = [];
     lines.push("");
-    lines.push(this.centerText("🏷 RuuviTRMNL Dashboard", width));
+    lines.push(this.centerText("--- RuuviTRMNL Dashboard ---", width));
     lines.push("");
     lines.push(separator);
 
@@ -178,7 +178,7 @@ export class ConsoleDisplay {
     const lines: string[] = [];
 
     lines.push("");
-    lines.push("📊 Application Status");
+    lines.push("-- Application Status --");
     lines.push(
       `   Running: ${this.status.isRunning ? "✅ Active" : "❌ Stopped"}`
     );
@@ -196,7 +196,7 @@ export class ConsoleDisplay {
     lines.push(`   Uptime: ${this.formatDuration(uptime)}`);
 
     lines.push("");
-    lines.push("🔗 TRMNL Connection");
+    lines.push("-- TRMNL Connection --");
     lines.push(`   Webhook: ${this.status.webhookInfo.url}`);
     lines.push(`   Strategy: ${this.status.webhookInfo.strategy}`);
     lines.push(`   Total Updates Sent: ${this.status.trmnlStats.totalSent}`);
@@ -248,7 +248,7 @@ export class ConsoleDisplay {
     }
 
     lines.push("");
-    lines.push("📈 Statistics");
+    lines.push("-- Statistics --");
     lines.push(
       `   Discovered Tags: ${this.status.collectorStats.totalDiscovered}`
     );
@@ -299,7 +299,7 @@ export class ConsoleDisplay {
     const lines: string[] = [];
 
     lines.push("");
-    lines.push("📤 Latest TRMNL Data");
+    lines.push("-- Latest TRMNL Data --");
 
     if (this.status.lastSentData) {
       lines.push("");
