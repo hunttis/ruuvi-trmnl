@@ -7,19 +7,19 @@
   "type": "commonjs",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "dev": "ts-node src/index.ts",
-    "dev:app": "ts-node src/app.ts",
-    "dev:manual": "ts-node src/app-manual.ts",
-    "setup": "ts-node src/setup-tags.ts",
-    "start": "node dist/index.js",
-    "start:app": "node dist/app.js",
-    "start:manual": "node dist/app-manual.js",
+    "build": "tsc && tsc-alias",
+    "dev": "ts-node src/core/index.ts",
+    "dev:app": "ts-node src/core/app.ts",
+    "dev:manual": "ts-node src/core/app-manual.ts",
+    "setup": "ts-node src/setup/setup-tags.ts",
+    "start": "node dist/core/index.js",
+    "start:app": "node dist/core/app.js",
+    "start:manual": "node dist/core/app-manual.js",
     "clean": "rm -rf dist",
-    "cache:inspect": "ts-node src/cache-inspector.ts",
+    "cache:inspect": "ts-node src/cache/cache-inspector.ts",
     "cache:clear": "rm -f ruuvi-cache.json && echo '🗑️  Cache file deleted'",
-    "trmnl:send": "ts-node src/trmnl-oneshot.ts",
-    "trmnl:send:verbose": "ts-node src/trmnl-oneshot.ts --verbose",
+    "trmnl:send": "ts-node src/trmnl/trmnl-oneshot.ts",
+    "trmnl:send:verbose": "ts-node src/trmnl/trmnl-oneshot.ts --verbose",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
@@ -39,6 +39,7 @@
     "jest": "^30.2.0",
     "liquidjs": "^10.22.0",
     "ts-jest": "^29.4.5",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16"
   }
 }
