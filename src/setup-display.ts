@@ -1,4 +1,4 @@
-import { DiscoveredTag } from "./setup-tags";
+import { DiscoveredTag } from "@/setup-tags";
 
 export interface SetupStatus {
   isScanning: boolean;

@@ -1,5 +1,5 @@
 import React from "react";
-import type { AppStatus } from "./ink-display";
+import type { AppStatus } from "@/ink-display";
 
 export async function createDashboard(ink: any) {
   const { Box, Text, useInput, useApp } = ink;

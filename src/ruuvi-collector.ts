@@ -1,7 +1,7 @@
-import { configManager } from "./config";
-import { RuuviTagData, RawRuuviData, RawRuuviTag } from "./types";
-import { CacheManager } from "./cache-manager";
-import { Logger } from "./logger";
+import { configManager } from "@/config";
+import { RuuviTagData, RawRuuviData, RawRuuviTag } from "@/types";
+import { CacheManager } from "@/cache-manager";
+import { Logger } from "@/logger";
 
 const ruuvi = require("node-ruuvitag");
 

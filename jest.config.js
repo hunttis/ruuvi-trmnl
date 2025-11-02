@@ -10,6 +10,7 @@ module.exports = {
     "node_modules/(?!(string-width|strip-ansi|ansi-regex|char-regex|emoji-regex)/)",
   ],
   moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
     "^./ink-display(\\.js)?$": "<rootDir>/tests/__mocks__/ink-display.ts",
   },
   collectCoverageFrom: [

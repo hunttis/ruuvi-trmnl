@@ -1,9 +1,9 @@
-import { configManager } from "./config";
-import { RuuviCollector } from "./ruuvi-collector";
-import { TrmnlWebhookSender } from "./trmnl-sender";
-import { RuuviTagData } from "./types";
-import { InkDisplay, AppStatus } from "./ink-display";
-import { Logger } from "./logger";
+import { configManager } from "@/config";
+import { RuuviCollector } from "@/ruuvi-collector";
+import { TrmnlWebhookSender } from "@/trmnl-sender";
+import { RuuviTagData } from "@/types";
+import { InkDisplay, AppStatus } from "@/ink-display";
+import { Logger } from "@/logger";
 
 export class RuuviTrmnlApp {
   private ruuviCollector: RuuviCollector;

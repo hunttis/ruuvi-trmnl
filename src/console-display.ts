@@ -1,4 +1,4 @@
-import { RuuviTagData } from "./types";
+import { RuuviTagData } from "@/types";
 import stringWidth from "string-width";
 
 export interface AppStatus {

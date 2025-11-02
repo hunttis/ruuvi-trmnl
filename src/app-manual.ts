@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { RuuviTrmnlApp } from "./app";
-import { Logger } from "./logger";
+import { RuuviTrmnlApp } from "@/app";
+import { Logger } from "@/logger";
 
 async function main() {
   Logger.log("🚀 Starting RuuviTRMNL in Manual Mode");
