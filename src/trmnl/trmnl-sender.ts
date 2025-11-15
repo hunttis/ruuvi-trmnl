@@ -194,7 +194,9 @@ export class TrmnlWebhookSender {
       }
     } catch (error: any) {
       Logger.error(
-        red(`TRMNL webhook connection test error: ${error?.message ?? "Unknown"}`)
+        red(
+          `TRMNL webhook connection test error: ${error?.message ?? "Unknown"}`
+        )
       );
       return false;
     }

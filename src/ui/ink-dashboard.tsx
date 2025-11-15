@@ -158,8 +158,8 @@ export async function createDashboard(ink: any) {
               {status.rateLimitedUntil &&
                 status.rateLimitRemainingMinutes !== undefined && (
                   <Text color="red">
-                    Rate Limited:{" "}
-                    {status.rateLimitRemainingMinutes.toFixed(1)} min remaining
+                    Rate Limited: {status.rateLimitRemainingMinutes.toFixed(1)}{" "}
+                    min remaining
                   </Text>
                 )}
               {status.trmnlStats.lastResponseCode !== undefined && (

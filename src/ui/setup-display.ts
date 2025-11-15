@@ -137,7 +137,11 @@ export class SetupDisplay {
     lines.push("");
     lines.push("-- Scan Status --");
     lines.push(
-      `   Scanning: ${this.status.isScanning ? `${colors.green}Active${colors.reset}` : `${colors.red}Stopped${colors.reset}`}`
+      `   Scanning: ${
+        this.status.isScanning
+          ? `${colors.green}Active${colors.reset}`
+          : `${colors.red}Stopped${colors.reset}`
+      }`
     );
     lines.push(`   Started: ${this.status.startTime.toLocaleString()}`);
 

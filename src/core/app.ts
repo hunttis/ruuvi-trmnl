@@ -342,9 +342,7 @@ export class RuuviTrmnlApp {
       // Check for rate limiting and set cooldown period
       if (response.statusCode === 429) {
         this.rateLimitedUntil = Date.now() + this.rateLimitCooldown;
-        this.updateConsoleDisplay(
-          "Rate limited! Pausing sends for 10 minutes"
-        );
+        this.updateConsoleDisplay("Rate limited! Pausing sends for 10 minutes");
       }
 
       if (response.success) {
@@ -502,9 +500,7 @@ export class RuuviTrmnlApp {
       // Check for rate limiting and set cooldown period
       if (response.statusCode === 429) {
         this.rateLimitedUntil = Date.now() + this.rateLimitCooldown;
-        this.updateConsoleDisplay(
-          "Rate limited! Pausing sends for 10 minutes"
-        );
+        this.updateConsoleDisplay("Rate limited! Pausing sends for 10 minutes");
       }
 
       if (response.success) {
