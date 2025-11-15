@@ -4,7 +4,7 @@ import * as readline from "readline";
 import * as fs from "fs";
 import { configManager } from "@/lib/config";
 import { RawRuuviTag, RawRuuviData } from "@/lib/types";
-import { SetupDisplay } from "@/ui/setup-display";
+import { InkSetupDisplay } from "@/ui/ink-setup-display";
 import { green, red } from "@/lib/colors";
 
 const ruuvi = require("node-ruuvitag");
@@ -25,13 +25,13 @@ export interface DiscoveredTag {
 
 class RuuviTagSetup {
   private discoveredTags = new Map<string, DiscoveredTag>();
-  private display: SetupDisplay;
+  private display: InkSetupDisplay;
   private isScanning = false;
   private startTime = new Date();
   private rl: readline.Interface;
 
   constructor() {
-    this.display = new SetupDisplay();
+    this.display = new InkSetupDisplay();
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
@@ -44,7 +44,7 @@ class RuuviTagSetup {
 
   public async start(): Promise<void> {
     this.startTime = new Date();
-    this.display.start();
+    await this.display.start();
     this.updateDisplay("Starting RuuviTag discovery...");
 
     this.setupRuuviListeners();
