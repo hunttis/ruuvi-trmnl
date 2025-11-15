@@ -1,15 +1,33 @@
 import { configManager } from "@/lib/config";
 import { RuuviCollector } from "@/collectors/ruuvi-collector";
 import { TrmnlWebhookSender } from "@/trmnl/trmnl-sender";
-import { RuuviTagData } from "@/lib/types";
-import { InkDisplay, AppStatus } from "@/ui/ink-display";
+import { RuuviTagData, RawRuuviTag, RawRuuviData } from "@/lib/types";
+import { CombinedDisplay } from "@/ui/ink-combined-display";
 import { Logger } from "@/lib/logger";
 import { green, red, blue } from "@/lib/colors";
+import { CacheManager } from "@/cache/cache-manager";
+import * as fs from "fs";
+
+const ruuvi = require("node-ruuvitag");
+
+export interface DiscoveredTag {
+  id: string;
+  shortId: string;
+  nickname?: string;
+  lastSeen: Date;
+  data?: {
+    temperature?: number;
+    humidity?: number;
+    pressure?: number;
+    battery?: number;
+    rssi?: number;
+  };
+}
 
 export class RuuviTrmnlApp {
   private ruuviCollector: RuuviCollector;
   private trmnlSender: TrmnlWebhookSender;
-  private consoleDisplay: InkDisplay;
+  private consoleDisplay: CombinedDisplay;
   private intervalId: NodeJS.Timeout | null = null;
   private displayUpdateIntervalId: NodeJS.Timeout | null = null;
   private isRunning = false;
@@ -24,17 +42,30 @@ export class RuuviTrmnlApp {
   private rateLimitedUntil: number = 0;
   private readonly rateLimitCooldown: number = 10 * 60 * 1000; // 10 minutes
   private readonly manualMode: boolean;
+  
+  // Setup mode properties
+  private setupCacheManager: CacheManager;
+  private discoveredTags = new Map<string, DiscoveredTag>();
+  private setupStartTime = new Date();
+  private isSetupScanning = false;
 
   constructor(useConsoleDisplay: boolean = true, manualMode: boolean = false) {
     this.ruuviCollector = new RuuviCollector();
     this.trmnlSender = new TrmnlWebhookSender();
-    this.consoleDisplay = new InkDisplay();
+    this.consoleDisplay = new CombinedDisplay();
+    this.setupCacheManager = new CacheManager();
     this.useConsoleDisplay = useConsoleDisplay;
     this.manualMode = manualMode;
 
     if (useConsoleDisplay) {
       Logger.setSuppressConsole(true);
       this.consoleDisplay.setForceSendCallback(() => this.forceSendData());
+      this.consoleDisplay.setSetupKeyPressCallback((key: string) =>
+        this.handleSetupKeyPress(key)
+      );
+      this.consoleDisplay.setScreenChangeCallback((screen: string) =>
+        this.handleScreenChange(screen as "dashboard" | "setup")
+      );
     }
 
     const config = configManager.getConfig();
@@ -213,7 +244,7 @@ export class RuuviTrmnlApp {
     const cacheStats = this.ruuviCollector.getCacheStats();
     const webhookInfo = this.trmnlSender.getWebhookInfo();
 
-    const status: Partial<AppStatus> = {
+    const status = {
       isRunning: this.isRunning,
       startTime: this.startTime,
       lastUpdateTime: new Date(),
@@ -234,21 +265,21 @@ export class RuuviTrmnlApp {
     };
 
     if (this.lastSentTime > 0) {
-      status.lastSentTime = new Date(this.lastSentTime);
-      status.nextSendTime = new Date(this.lastSentTime + this.minSendInterval);
+      (status as any).lastSentTime = new Date(this.lastSentTime);
+      (status as any).nextSendTime = new Date(this.lastSentTime + this.minSendInterval);
     }
 
     // Add rate limiting status
     if (this.isRateLimited()) {
-      status.rateLimitedUntil = new Date(this.rateLimitedUntil);
-      status.rateLimitRemainingMinutes = this.getRateLimitRemainingTime();
+      (status as any).rateLimitedUntil = new Date(this.rateLimitedUntil);
+      (status as any).rateLimitRemainingMinutes = this.getRateLimitRemainingTime();
     }
 
     if (isError && message) {
-      status.lastError = message;
+      (status as any).lastError = message;
     }
 
-    this.consoleDisplay.updateStatus(status);
+    this.consoleDisplay.updateDashboardStatus(status);
   }
 
   private async sendDataCycle(): Promise<void> {
@@ -524,6 +555,187 @@ export class RuuviTrmnlApp {
       stats: this.ruuviCollector.getStats(),
       webhookInfo: this.trmnlSender.getWebhookInfo(),
     };
+  }
+
+  // Setup mode methods
+  private async handleScreenChange(screen: "dashboard" | "setup"): Promise<void> {
+    if (screen === "setup") {
+      await this.initializeSetupMode();
+      this.updateSetupDisplay("Entering setup mode...");
+    }
+  }
+
+  private async initializeSetupMode(): Promise<void> {
+    if (this.isSetupScanning) {
+      return;
+    }
+
+    this.setupStartTime = new Date();
+    await this.setupCacheManager.initialize();
+    this.discoveredTags.clear();
+
+    // Setup ruuvi listeners for setup mode
+    ruuvi.on("found", (tag: RawRuuviTag) => {
+      this.handleSetupTagFound(tag);
+    });
+
+    this.isSetupScanning = true;
+    await this.startSetupScanning();
+  }
+
+  private handleSetupTagFound(tag: RawRuuviTag): void {
+    const shortId = tag.id.substring(0, 8);
+
+    if (!this.discoveredTags.has(tag.id)) {
+      // Check if this tag already has a nickname in config
+      let existingNickname: string | undefined;
+      try {
+        const currentConfig = configManager.getConfig();
+        existingNickname = currentConfig.ruuvi.tagAliases[shortId];
+      } catch (error) {
+        // Config file might not exist yet, that's ok
+      }
+
+      const discoveredTag: DiscoveredTag = {
+        id: tag.id,
+        shortId,
+        lastSeen: new Date(),
+        ...(existingNickname && { nickname: existingNickname }),
+      };
+
+      this.discoveredTags.set(tag.id, discoveredTag);
+      this.updateSetupDisplay(`Found tag: ${shortId}${existingNickname ? ` (${existingNickname})` : ""}`);
+    }
+
+    // Listen for data updates
+    tag.on("updated", (data: RawRuuviData) => {
+      const existing = this.discoveredTags.get(tag.id);
+      if (existing) {
+        existing.lastSeen = new Date();
+        existing.data = {
+          ...(data.temperature !== undefined && {
+            temperature: data.temperature,
+          }),
+          ...(data.humidity !== undefined && { humidity: data.humidity }),
+          ...(data.pressure !== undefined && {
+            pressure: data.pressure / 100,
+          }),
+          ...(data.battery !== undefined && { battery: data.battery / 1000 }),
+          ...(data.rssi !== undefined && { rssi: data.rssi }),
+        };
+        this.updateSetupDisplay();
+      }
+    });
+  }
+
+  private async startSetupScanning(): Promise<void> {
+    try {
+      ruuvi.findTags();
+      this.updateSetupDisplay("Setup scanning started");
+    } catch (error: any) {
+      this.updateSetupDisplay(`Failed to start setup scanning: ${error?.message ?? String(error)}`);
+    }
+  }
+
+  private updateSetupDisplay(currentAction?: string): void {
+    // Get configured tags from cache
+    const configuredTags = this.getConfiguredTags();
+
+    const status = {
+      isScanning: this.isSetupScanning,
+      startTime: this.setupStartTime,
+      discoveredTags: this.discoveredTags,
+      configuredTags,
+    };
+
+    if (currentAction) {
+      (status as any).currentAction = currentAction;
+    }
+
+    this.consoleDisplay.updateSetupStatus(status);
+  }
+
+  private getConfiguredTags(): Array<{ id: string; name: string; lastSeen?: Date }> {
+    const tags: Array<{ id: string; name: string; lastSeen?: Date }> = [];
+
+    try {
+      const config = configManager.getConfig();
+      const cachedData = this.setupCacheManager.getAllCachedTags();
+
+      // Go through all tags in config
+      for (const [shortId, nickname] of Object.entries(config.ruuvi.tagAliases)) {
+        const cached = cachedData.find((c: any) => c.id === shortId);
+
+        if (cached?.lastUpdated) {
+          tags.push({
+            id: shortId,
+            name: nickname,
+            lastSeen: new Date(cached.lastUpdated),
+          });
+        } else {
+          tags.push({
+            id: shortId,
+            name: nickname,
+          });
+        }
+      }
+    } catch (error) {
+      // Config or cache might not exist yet
+    }
+
+    return tags;
+  }
+
+  private async handleSetupKeyPress(key: string): Promise<void> {
+    const keyLower = key.toLowerCase();
+
+    if (keyLower === "s") {
+      await this.saveSetupConfig();
+    } else if (keyLower === "r") {
+      this.updateSetupDisplay("Display refreshed");
+    } else if (/^[1-9]$/.test(key)) {
+      const index = parseInt(key) - 1;
+      const tagArray = Array.from(this.discoveredTags.values());
+
+      if (index < tagArray.length && tagArray[index]) {
+        await this.promptSetupNickname(tagArray[index]);
+      }
+    }
+  }
+
+  private async promptSetupNickname(tag: DiscoveredTag): Promise<void> {
+    this.updateSetupDisplay(`Enter nickname for ${tag.shortId}: `);
+    
+    // Note: In the combined UI, we would need to implement a proper input mechanism
+    // For now, this is a placeholder - we might need to enhance the UI to support text input
+    // or continue using the numbered selection approach
+  }
+
+  private async saveSetupConfig(): Promise<void> {
+    try {
+      const config = configManager.getConfig();
+      const tagArray = Array.from(this.discoveredTags.values());
+
+      // Update aliases
+      for (const tag of tagArray) {
+        if (tag.nickname) {
+          config.ruuvi.tagAliases[tag.shortId] = tag.nickname;
+        }
+      }
+
+      // Update display order
+      config.ruuvi.displayOrder = tagArray
+        .filter((tag) => tag.nickname)
+        .map((tag) => tag.shortId);
+
+      // Save to file
+      const configPath = "./config.json";
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+
+      this.updateSetupDisplay(`Configuration saved! ${tagArray.filter(t => t.nickname).length} tags configured`);
+    } catch (error: any) {
+      this.updateSetupDisplay(`Failed to save configuration: ${error?.message ?? String(error)}`);
+    }
   }
 }
 

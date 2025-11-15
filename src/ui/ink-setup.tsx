@@ -1,10 +1,17 @@
 import React from "react";
 import type { DiscoveredTag } from "@/setup/setup-tags";
 
+export interface ConfiguredTag {
+  id: string;
+  name: string;
+  lastSeen?: Date;
+}
+
 export interface SetupStatus {
   isScanning: boolean;
   startTime: Date;
   discoveredTags: Map<string, DiscoveredTag>;
+  configuredTags?: ConfiguredTag[];
   currentAction?: string;
   lastError?: string;
   savedCount?: number;
@@ -174,7 +181,43 @@ export async function createSetupUI(ink: any) {
                   <Text dimColor>
                     ... and {status.discoveredTags.size - 9} more tags
                   </Text>
-                )}
+              )}
+            </Box>
+            )}
+
+            {/* Configured Tags */}
+            {status.configuredTags && status.configuredTags.length > 0 && (
+              <Box
+                flexDirection="column"
+                marginBottom={1}
+                borderStyle="round"
+                borderColor="cyan"
+                paddingX={1}
+              >
+                <Text bold color="blue">
+                  -- Configured Tags --
+                </Text>
+                {status.configuredTags.map((tag) => {
+                  const lastSeenText = tag.lastSeen
+                    ? getDataAge(tag.lastSeen)
+                    : "Never";
+                  const statusColor: "green" | "yellow" | "red" = tag.lastSeen
+                    ? getStatusColor({
+                        id: tag.id,
+                        shortId: tag.id,
+                        lastSeen: tag.lastSeen,
+                      } as DiscoveredTag)
+                    : "red";
+
+                  return (
+                    <Box key={tag.id} flexDirection="row">
+                      <Text>
+                        <Text color={statusColor}>●</Text> {tag.id.padEnd(10)}{" "}
+                        {tag.name.substring(0, 15).padEnd(15)} ({lastSeenText})
+                      </Text>
+                    </Box>
+                  );
+                })}
               </Box>
             )}
 
