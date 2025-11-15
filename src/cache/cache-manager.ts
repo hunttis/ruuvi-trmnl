@@ -100,7 +100,7 @@ export class CacheManager {
 
     this.saveToFile().catch((error) => {
       Logger.error(
-        "❌ Failed to save cache after marking tags as sent:" + error
+        "Error: Failed to save cache after marking tags as sent:" + error
       );
     });
   }
@@ -200,7 +200,7 @@ export class CacheManager {
         "utf8"
       );
     } catch (error) {
-      Logger.error("❌ Failed to save cache to file:" + error);
+      Logger.error("Error: Failed to save cache to file:" + error);
       throw error;
     }
   }
@@ -224,7 +224,7 @@ export class CacheManager {
         this.cache = {};
         return;
       }
-      Logger.error("❌ Failed to load cache from file:" + error);
+      Logger.error("Error: Failed to load cache from file:" + error);
       throw error;
     }
   }
@@ -257,7 +257,7 @@ export class CacheManager {
   public clearCache(): void {
     this.cache = {};
     this.saveToFile().catch((error) => {
-      Logger.error("❌ Failed to save cleared cache:" + error);
+      Logger.error("Error: Failed to save cleared cache:" + error);
     });
   }
 }

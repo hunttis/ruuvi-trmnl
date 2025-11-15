@@ -7,6 +7,7 @@ import {
 } from "@/lib/types";
 import { Logger } from "@/lib/logger";
 import { ErrorLogger } from "@/lib/error-logger";
+import { green, red } from "@/lib/colors";
 
 export class TrmnlWebhookSender {
   private readonly webhookUrl: string;
@@ -31,11 +32,11 @@ export class TrmnlWebhookSender {
       if (response.success) {
         this.totalSent++;
         Logger.log(
-          `✅ Successfully sent data for ${tagData.length} tags to TRMNL`
+          green(`Successfully sent data for ${tagData.length} tags to TRMNL`)
         );
       } else {
         const errorMsg = response.message || response.error || "Unknown error";
-        Logger.error(`❌ TRMNL webhook failed: ${errorMsg}`);
+        Logger.error(red(`TRMNL webhook failed: ${errorMsg}`));
         await ErrorLogger.logError(errorMsg, response.statusCode);
       }
 
@@ -170,7 +171,7 @@ export class TrmnlWebhookSender {
 
   public async testConnection(): Promise<boolean> {
     try {
-      Logger.log("🔍 Testing TRMNL webhook connection...");
+      Logger.log("Testing TRMNL webhook connection...");
 
       const testPayload: TrmnlWebhookPayload = {
         merge_variables: {
@@ -183,17 +184,17 @@ export class TrmnlWebhookSender {
       const response = await this.makeWebhookRequest(testPayload);
 
       if (response.success) {
-        Logger.log("✅ TRMNL webhook connection test successful");
+        Logger.log(green("TRMNL webhook connection test successful"));
         return true;
       } else {
         Logger.error(
-          `❌ TRMNL webhook connection test failed: ${response.error}`
+          red(`TRMNL webhook connection test failed: ${response.error}`)
         );
         return false;
       }
     } catch (error: any) {
       Logger.error(
-        `❌ TRMNL webhook connection test error: ${error?.message ?? "Unknown"}`
+        red(`TRMNL webhook connection test error: ${error?.message ?? "Unknown"}`)
       );
       return false;
     }

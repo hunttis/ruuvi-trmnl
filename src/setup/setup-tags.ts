@@ -5,6 +5,7 @@ import * as fs from "fs";
 import { configManager } from "@/lib/config";
 import { RawRuuviTag, RawRuuviData } from "@/lib/types";
 import { SetupDisplay } from "@/ui/setup-display";
+import { green, red } from "@/lib/colors";
 
 const ruuvi = require("node-ruuvitag");
 
@@ -260,7 +261,7 @@ class RuuviTagSetup {
     this.updateDisplay("Stopping scan and cleaning up...");
     this.display.stop();
     this.rl.close();
-    console.log("\n✅ Setup completed. Configuration saved to config.json");
+    console.log(green("\nSetup completed. Configuration saved to config.json"));
     process.exit(0);
   }
 
@@ -279,7 +280,7 @@ async function main() {
     const setup = new RuuviTagSetup();
     await setup.start();
   } catch (error) {
-    console.error("❌ Error:", error);
+    console.error(red("Error:"), error);
     process.exit(1);
   }
 }
@@ -287,7 +288,7 @@ async function main() {
 // Handle command line arguments
 const args = process.argv.slice(2);
 if (args.includes("--help") || args.includes("-h")) {
-  console.log("🔍 RuuviTag Setup Tool");
+  console.log("RuuviTag Setup Tool");
   console.log("");
   console.log("Usage: npm run setup");
   console.log("");

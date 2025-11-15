@@ -1,4 +1,5 @@
 import { DiscoveredTag } from "@/setup/setup-tags";
+import { colors } from "@/lib/colors";
 
 export interface SetupStatus {
   isScanning: boolean;
@@ -93,7 +94,7 @@ export class SetupDisplay {
     // Combine columns
     const lines: string[] = [];
     lines.push("");
-    lines.push(this.centerText("🔍 RuuviTag Setup Tool", width));
+    lines.push(this.centerText("RuuviTag Setup Tool", width));
     lines.push("");
     lines.push(separator);
 
@@ -136,7 +137,7 @@ export class SetupDisplay {
     lines.push("");
     lines.push("-- Scan Status --");
     lines.push(
-      `   Scanning: ${this.status.isScanning ? "✅ Active" : "❌ Stopped"}`
+      `   Scanning: ${this.status.isScanning ? `${colors.green}Active${colors.reset}` : `${colors.red}Stopped${colors.reset}`}`
     );
     lines.push(`   Started: ${this.status.startTime.toLocaleString()}`);
 
@@ -200,8 +201,8 @@ export class SetupDisplay {
 
     if (this.status.lastError) {
       lines.push("");
-      lines.push("❌ Latest Error");
-      lines.push(`   ${this.status.lastError}`);
+      lines.push(`${colors.red}Latest Error${colors.reset}`);
+      lines.push(this.status.lastError);
     }
 
     return lines;
@@ -211,7 +212,7 @@ export class SetupDisplay {
     const lines: string[] = [];
 
     lines.push("");
-    lines.push("🛠️ Actions");
+    lines.push("Actions");
     lines.push("");
     lines.push("   1-9  Set nickname for tag number");
     lines.push("   S    Save configuration to config.json");
@@ -219,7 +220,7 @@ export class SetupDisplay {
     lines.push("   R    Refresh display");
     lines.push("");
 
-    lines.push("ℹ Instructions");
+    lines.push("Instructions");
     lines.push("");
     lines.push("   1. Wait for RuuviTags to be discovered");
     lines.push("   2. Press number keys (1-9) to set nicknames");
@@ -227,7 +228,7 @@ export class SetupDisplay {
     lines.push("   4. Press 'Q' when finished");
     lines.push("");
 
-    lines.push("📋 About");
+    lines.push("About");
     lines.push("");
     lines.push("   This tool helps you:");
     lines.push("   • Discover nearby RuuviTag sensors");
@@ -237,7 +238,7 @@ export class SetupDisplay {
     lines.push("");
 
     if (this.status.discoveredTags.size > 0) {
-      lines.push("💡 Tips");
+      lines.push("Tips");
       lines.push("");
       lines.push("   • Choose descriptive names like 'Kitchen',");
       lines.push("     'Bedroom', 'Outdoor'");
@@ -284,11 +285,11 @@ export class SetupDisplay {
     const age = Math.floor((Date.now() - tag.lastSeen.getTime()) / 1000);
 
     if (age < 60) {
-      return "🟢"; // Fresh data
+      return `${colors.green}●${colors.reset}`; // Fresh data
     } else if (age < 300) {
-      return "🟡"; // Recent data
+      return `${colors.yellow}●${colors.reset}`; // Recent data
     } else {
-      return "🔴"; // Old data
+      return `${colors.red}●${colors.reset}`; // Old data
     }
   }
 }

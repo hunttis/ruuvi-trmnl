@@ -59,16 +59,18 @@ export async function createDashboard(ink: any) {
       }
     };
 
-    const getStatusIcon = (tagStatus: string): string => {
+    const getStatusColor = (
+      tagStatus: string
+    ): "green" | "yellow" | "red" | "gray" => {
       switch (tagStatus) {
         case "active":
-          return "🟢";
+          return "green";
         case "stale":
-          return "🟡";
+          return "yellow";
         case "offline":
-          return "🔴";
+          return "red";
         default:
-          return "⚪";
+          return "gray";
       }
     };
 
@@ -116,9 +118,9 @@ export async function createDashboard(ink: any) {
               <Text>
                 Running:{" "}
                 {status.isRunning ? (
-                  <Text color="green">✅ Active</Text>
+                  <Text color="green">Active</Text>
                 ) : (
-                  <Text color="red">❌ Stopped</Text>
+                  <Text color="red">Stopped</Text>
                 )}
               </Text>
               <Text>Started: {formatDateTime(status.startTime)}</Text>
@@ -156,7 +158,7 @@ export async function createDashboard(ink: any) {
               {status.rateLimitedUntil &&
                 status.rateLimitRemainingMinutes !== undefined && (
                   <Text color="red">
-                    🚫 Rate Limited:{" "}
+                    Rate Limited:{" "}
                     {status.rateLimitRemainingMinutes.toFixed(1)} min remaining
                   </Text>
                 )}
@@ -166,9 +168,7 @@ export async function createDashboard(ink: any) {
                     status.trmnlStats.lastResponseCode < 400 ? "green" : "red"
                   }
                 >
-                  Last Response:{" "}
-                  {status.trmnlStats.lastResponseCode < 400 ? "✅" : "❌"} HTTP{" "}
-                  {status.trmnlStats.lastResponseCode}
+                  Last Response: HTTP {status.trmnlStats.lastResponseCode}
                 </Text>
               )}
               {status.trmnlStats.lastResponseMessage && (
@@ -222,12 +222,13 @@ export async function createDashboard(ink: any) {
                       ? `${tag.battery.toFixed(2)}V`
                       : "N/A";
                   const age = getDataAge(tag.lastUpdated);
-                  const statusIcon = getStatusIcon(tag.status);
+                  const statusColor = getStatusColor(tag.status);
 
                   return (
                     <Text key={tag.id}>
-                      {statusIcon} {tag.name.padEnd(12)} {temp.padStart(7)}{" "}
-                      {humidity.padStart(5)} {battery.padStart(6)} ({age})
+                      <Text color={statusColor}>●</Text> {tag.name.padEnd(12)}{" "}
+                      {temp.padStart(7)} {humidity.padStart(5)}{" "}
+                      {battery.padStart(6)} ({age})
                     </Text>
                   );
                 })}
@@ -243,7 +244,7 @@ export async function createDashboard(ink: any) {
                 paddingX={1}
               >
                 <Text bold color="red">
-                  ❌ Latest Error
+                  Latest Error
                 </Text>
                 <Text color="red">{status.lastError}</Text>
               </Box>

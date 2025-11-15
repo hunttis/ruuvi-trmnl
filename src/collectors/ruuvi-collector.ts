@@ -83,12 +83,12 @@ export class RuuviCollector {
 
   public startScanning(): void {
     if (this.isScanning) {
-      Logger.log("ℹ  Already scanning...");
+      Logger.log("Already scanning...");
       return;
     }
 
     this.isScanning = true;
-    Logger.log("🔍 Starting RuuviTag scan...");
+    Logger.log("Starting RuuviTag scan...");
     // Scanning starts automatically when listeners are set up
   }
 
@@ -148,10 +148,10 @@ export class RuuviCollector {
     try {
       Logger.log("📡 Taking RuuviTag snapshot...");
       const tags = await ruuvi.findTags();
-      Logger.log(`📋 Snapshot found ${tags.length} tag(s)`);
+      Logger.log(`Snapshot found ${tags.length} tag(s)`);
       return this.getActiveTagData();
     } catch (error) {
-      Logger.log("ℹ  Snapshot method found no tags (normal if none nearby)");
+      Logger.log("Snapshot method found no tags (normal if none nearby)");
       return this.getActiveTagData();
     }
   }

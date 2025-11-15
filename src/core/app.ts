@@ -4,6 +4,7 @@ import { TrmnlWebhookSender } from "@/trmnl/trmnl-sender";
 import { RuuviTagData } from "@/lib/types";
 import { InkDisplay, AppStatus } from "@/ui/ink-display";
 import { Logger } from "@/lib/logger";
+import { green, red, blue } from "@/lib/colors";
 
 export class RuuviTrmnlApp {
   private ruuviCollector: RuuviCollector;
@@ -108,9 +109,9 @@ export class RuuviTrmnlApp {
     }
 
     if (this.useConsoleDisplay) {
-      this.updateConsoleDisplay("🔍 Starting RuuviTag scanning...");
+      this.updateConsoleDisplay("Starting RuuviTag scanning...");
     } else {
-      console.log("🔍 Starting RuuviTag scanning...");
+      console.log(blue("Starting RuuviTag scanning..."));
     }
     await this.ruuviCollector.startScanning();
 
@@ -124,11 +125,11 @@ export class RuuviTrmnlApp {
           const errorMsg = error?.message ?? String(error);
           if (this.useConsoleDisplay) {
             this.updateConsoleDisplay(
-              `❌ Error in periodic data cycle: ${errorMsg}`,
+              `${red("Error in periodic data cycle:")} ${errorMsg}`,
               true
             );
           } else {
-            console.error("❌ Error in periodic data cycle:", errorMsg);
+            console.error(red("Error in periodic data cycle:"), errorMsg);
           }
         });
       }, this.refreshInterval);
@@ -151,10 +152,10 @@ export class RuuviTrmnlApp {
 
     if (this.useConsoleDisplay) {
       this.updateConsoleDisplay(
-        "✅ RuuviTRMNL application started successfully"
+        green("RuuviTRMNL application started successfully")
       );
     } else {
-      console.log("✅ RuuviTRMNL application started successfully");
+      console.log(green("RuuviTRMNL application started successfully"));
     }
 
     this.setupGracefulShutdown();
@@ -163,9 +164,9 @@ export class RuuviTrmnlApp {
   public async stop(): Promise<void> {
     if (!this.isRunning) {
       if (this.useConsoleDisplay) {
-        this.updateConsoleDisplay("ℹ  App is not running");
+        this.updateConsoleDisplay("App is not running");
       } else {
-        console.log("ℹ  App is not running");
+        console.log("App is not running");
       }
       return;
     }
@@ -200,7 +201,7 @@ export class RuuviTrmnlApp {
       this.consoleDisplay.stop();
     }
 
-    console.log("✅ RuuviTRMNL application stopped");
+    console.log(green("RuuviTRMNL application stopped"));
   }
 
   private updateConsoleDisplay(
@@ -259,7 +260,7 @@ export class RuuviTrmnlApp {
       if (this.isRateLimited()) {
         const remainingMinutes = Math.ceil(this.getRateLimitRemainingTime());
         this.updateConsoleDisplay(
-          `🚫 Rate limited - ${remainingMinutes}m remaining`
+          red(`Rate limited - ${remainingMinutes}m remaining`)
         );
         return;
       }
@@ -342,7 +343,7 @@ export class RuuviTrmnlApp {
       if (response.statusCode === 429) {
         this.rateLimitedUntil = Date.now() + this.rateLimitCooldown;
         this.updateConsoleDisplay(
-          "🚫 Rate limited! Pausing sends for 10 minutes"
+          "Rate limited! Pausing sends for 10 minutes"
         );
       }
 
@@ -413,7 +414,7 @@ export class RuuviTrmnlApp {
       if (this.isRateLimited()) {
         const remainingMinutes = Math.ceil(this.getRateLimitRemainingTime());
         this.updateConsoleDisplay(
-          `🚫 Rate limited - cannot send for ${remainingMinutes}m`
+          `Rate limited - cannot send for ${remainingMinutes}m`
         );
         return;
       }
@@ -502,7 +503,7 @@ export class RuuviTrmnlApp {
       if (response.statusCode === 429) {
         this.rateLimitedUntil = Date.now() + this.rateLimitCooldown;
         this.updateConsoleDisplay(
-          "🚫 Rate limited! Pausing sends for 10 minutes"
+          "Rate limited! Pausing sends for 10 minutes"
         );
       }
 

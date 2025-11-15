@@ -89,25 +89,25 @@ export class TrmnlOneShot {
       const dataToSend = Array.from(this.tagData.values());
 
       this.log(
-        `📤 Sending ${dataToSend.length} tag records to TRMNL (temp & humidity only)...`
+        `Sending ${dataToSend.length} tag records to TRMNL (temp & humidity only)...`
       );
 
       // Send to TRMNL using the same method as the main app (filtering is now done in TrmnlWebhookSender)
       const success = await this.sender.sendRuuviData(dataToSend);
 
       if (success) {
-        console.log("✅ Successfully sent data to TRMNL!");
+        console.log("Successfully Successfully sent data to TRMNL!");
         console.log(
-          `📊 Sent data for: ${dataToSend.map((t) => t.name).join(", ")}`
+          `Sent data for: ${dataToSend.map((t) => t.name).join(", ")}`
         );
         process.exit(0);
       } else {
-        console.error("❌ Failed to send data to TRMNL");
+        console.error("Error: Failed to send data to TRMNL");
         process.exit(1);
       }
     } catch (error: any) {
       console.error(
-        "❌ Error sending to TRMNL:",
+        "Error: Error sending to TRMNL:",
         error?.message ?? String(error)
       );
       process.exit(1);
@@ -135,14 +135,14 @@ export class TrmnlOneShot {
       if (this.isRunning) {
         console.log(`⏰ Timeout after ${timeoutMs / 1000}s`);
         console.log(
-          `📊 Collected ${this.collectedTags.size}/${this.requiredTags.length} tags`
+          `Collected ${this.collectedTags.size}/${this.requiredTags.length} tags`
         );
 
         if (this.collectedTags.size > 0) {
           console.log("🔄 Sending partial data...");
           this.sendAndExit();
         } else {
-          console.log("❌ No tag data collected");
+          console.log("Error: No tag data collected");
           this.cleanup(1);
         }
       }
@@ -173,7 +173,7 @@ export class TrmnlOneShot {
     } catch (error: any) {
       clearTimeout(timeoutId);
       console.error(
-        "❌ Error starting collector:",
+        "Error: Error starting collector:",
         error?.message ?? String(error)
       );
       process.exit(1);
@@ -230,7 +230,7 @@ Description:
     const oneShot = new TrmnlOneShot({ verbose });
     await oneShot.run(timeout);
   } catch (error: any) {
-    console.error("❌ Failed to start:", error?.message ?? String(error));
+    console.error("Error: Failed to start:", error?.message ?? String(error));
     process.exit(1);
   }
 }

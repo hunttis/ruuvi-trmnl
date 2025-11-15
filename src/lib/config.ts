@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { green, red } from "@/lib/colors";
 
 export interface Config {
   trmnl: {
@@ -34,13 +35,13 @@ class ConfigManager {
       if (fs.existsSync(this.configPath)) {
         const configData = fs.readFileSync(this.configPath, "utf8");
         this.config = JSON.parse(configData);
-        console.log("✅ Configuration loaded successfully");
+        console.log(green("Configuration loaded successfully"));
         return this.config!;
       } else {
         throw new Error("Config file not found");
       }
     } catch (error) {
-      console.error("❌ Failed to load configuration:");
+      console.error(red("Failed to load configuration:"));
       console.error(`   Config file: ${this.configPath}`);
       console.error(`   Template available: ${this.templatePath}`);
       console.error(

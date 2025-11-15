@@ -14,7 +14,7 @@ async function main() {
     await app.start();
   } catch (error: any) {
     Logger.log(
-      `❌ Failed to start application: ${error?.message ?? String(error)}`
+      `Error: Failed to start application: ${error?.message ?? String(error)}`
     );
     process.exit(1);
   }
