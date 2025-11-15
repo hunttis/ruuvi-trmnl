@@ -11,7 +11,6 @@
     "dev": "ts-node -r tsconfig-paths/register src/core/index.ts",
     "dev:app": "ts-node -r tsconfig-paths/register src/core/app.ts",
     "dev:manual": "ts-node -r tsconfig-paths/register src/core/app-manual.ts",
-    "setup": "ts-node -r tsconfig-paths/register src/setup/setup-tags.ts",
     "start": "node dist/core/index.js",
     "start:app": "node dist/core/app.js",
     "start:manual": "node dist/core/app-manual.js",

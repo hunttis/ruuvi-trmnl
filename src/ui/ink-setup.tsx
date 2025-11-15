@@ -1,5 +1,18 @@
 import React from "react";
-import type { DiscoveredTag } from "@/setup/setup-tags";
+
+export interface DiscoveredTag {
+  id: string;
+  shortId: string;
+  nickname?: string;
+  lastSeen: Date;
+  data?: {
+    temperature?: number;
+    humidity?: number;
+    pressure?: number;
+    battery?: number;
+    rssi?: number;
+  };
+}
 
 export interface ConfiguredTag {
   id: string;
