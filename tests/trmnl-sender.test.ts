@@ -108,7 +108,9 @@ describe("TrmnlWebhookSender", () => {
       expect(result.error).toBe("HTTP 400: Invalid payload");
       expect(result.statusCode).toBe(400);
       expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining("TRMNL webhook failed: HTTP 400: Invalid payload")
+        expect.stringContaining(
+          "TRMNL webhook failed: HTTP 400: Invalid payload"
+        )
       );
     });
 
@@ -254,7 +256,9 @@ describe("TrmnlWebhookSender", () => {
 
       expect(result).toBe(false);
       expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining("TRMNL webhook connection test failed: Connection failed")
+        expect.stringContaining(
+          "TRMNL webhook connection test failed: Connection failed"
+        )
       );
     });
   });
