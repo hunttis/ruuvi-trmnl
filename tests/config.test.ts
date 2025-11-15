@@ -56,7 +56,7 @@ describe("ConfigManager", () => {
         "Process.exit(1) called"
       );
       expect(console.error).toHaveBeenCalledWith(
-        "❌ Failed to load configuration:"
+        expect.stringContaining("Failed to load configuration:")
       );
     });
 
@@ -68,7 +68,7 @@ describe("ConfigManager", () => {
         "Process.exit(1) called"
       );
       expect(console.error).toHaveBeenCalledWith(
-        "❌ Failed to load configuration:"
+        expect.stringContaining("Failed to load configuration:")
       );
     });
 

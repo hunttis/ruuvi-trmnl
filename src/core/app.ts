@@ -42,7 +42,7 @@ export class RuuviTrmnlApp {
   private rateLimitedUntil: number = 0;
   private readonly rateLimitCooldown: number = 10 * 60 * 1000; // 10 minutes
   private readonly manualMode: boolean;
-  
+
   // Setup mode properties
   private setupCacheManager: CacheManager;
   private discoveredTags = new Map<string, DiscoveredTag>();
@@ -266,13 +266,16 @@ export class RuuviTrmnlApp {
 
     if (this.lastSentTime > 0) {
       (status as any).lastSentTime = new Date(this.lastSentTime);
-      (status as any).nextSendTime = new Date(this.lastSentTime + this.minSendInterval);
+      (status as any).nextSendTime = new Date(
+        this.lastSentTime + this.minSendInterval
+      );
     }
 
     // Add rate limiting status
     if (this.isRateLimited()) {
       (status as any).rateLimitedUntil = new Date(this.rateLimitedUntil);
-      (status as any).rateLimitRemainingMinutes = this.getRateLimitRemainingTime();
+      (status as any).rateLimitRemainingMinutes =
+        this.getRateLimitRemainingTime();
     }
 
     if (isError && message) {
@@ -558,7 +561,9 @@ export class RuuviTrmnlApp {
   }
 
   // Setup mode methods
-  private async handleScreenChange(screen: "dashboard" | "setup"): Promise<void> {
+  private async handleScreenChange(
+    screen: "dashboard" | "setup"
+  ): Promise<void> {
     if (screen === "setup") {
       await this.initializeSetupMode();
       this.updateSetupDisplay("Entering setup mode...");
@@ -604,7 +609,11 @@ export class RuuviTrmnlApp {
       };
 
       this.discoveredTags.set(tag.id, discoveredTag);
-      this.updateSetupDisplay(`Found tag: ${shortId}${existingNickname ? ` (${existingNickname})` : ""}`);
+      this.updateSetupDisplay(
+        `Found tag: ${shortId}${
+          existingNickname ? ` (${existingNickname})` : ""
+        }`
+      );
     }
 
     // Listen for data updates
@@ -633,7 +642,9 @@ export class RuuviTrmnlApp {
       ruuvi.findTags();
       this.updateSetupDisplay("Setup scanning started");
     } catch (error: any) {
-      this.updateSetupDisplay(`Failed to start setup scanning: ${error?.message ?? String(error)}`);
+      this.updateSetupDisplay(
+        `Failed to start setup scanning: ${error?.message ?? String(error)}`
+      );
     }
   }
 
@@ -655,7 +666,11 @@ export class RuuviTrmnlApp {
     this.consoleDisplay.updateSetupStatus(status);
   }
 
-  private getConfiguredTags(): Array<{ id: string; name: string; lastSeen?: Date }> {
+  private getConfiguredTags(): Array<{
+    id: string;
+    name: string;
+    lastSeen?: Date;
+  }> {
     const tags: Array<{ id: string; name: string; lastSeen?: Date }> = [];
 
     try {
@@ -663,7 +678,9 @@ export class RuuviTrmnlApp {
       const cachedData = this.setupCacheManager.getAllCachedTags();
 
       // Go through all tags in config
-      for (const [shortId, nickname] of Object.entries(config.ruuvi.tagAliases)) {
+      for (const [shortId, nickname] of Object.entries(
+        config.ruuvi.tagAliases
+      )) {
         const cached = cachedData.find((c: any) => c.id === shortId);
 
         if (cached?.lastUpdated) {
@@ -705,7 +722,7 @@ export class RuuviTrmnlApp {
 
   private async promptSetupNickname(tag: DiscoveredTag): Promise<void> {
     this.updateSetupDisplay(`Enter nickname for ${tag.shortId}: `);
-    
+
     // Note: In the combined UI, we would need to implement a proper input mechanism
     // For now, this is a placeholder - we might need to enhance the UI to support text input
     // or continue using the numbered selection approach
@@ -732,9 +749,15 @@ export class RuuviTrmnlApp {
       const configPath = "./config.json";
       fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 
-      this.updateSetupDisplay(`Configuration saved! ${tagArray.filter(t => t.nickname).length} tags configured`);
+      this.updateSetupDisplay(
+        `Configuration saved! ${
+          tagArray.filter((t) => t.nickname).length
+        } tags configured`
+      );
     } catch (error: any) {
-      this.updateSetupDisplay(`Failed to save configuration: ${error?.message ?? String(error)}`);
+      this.updateSetupDisplay(
+        `Failed to save configuration: ${error?.message ?? String(error)}`
+      );
     }
   }
 }

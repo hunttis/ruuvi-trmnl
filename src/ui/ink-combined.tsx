@@ -47,7 +47,11 @@ export async function createCombinedUI(ink: any) {
       } else if (input === "q" && currentScreen === "setup") {
         // Q key in setup mode returns to dashboard
         onScreenChange("dashboard");
-      } else if (currentScreen === "dashboard" && input === " " && onForceSend) {
+      } else if (
+        currentScreen === "dashboard" &&
+        input === " " &&
+        onForceSend
+      ) {
         // Space bar in dashboard mode forces send
         onForceSend();
       } else if (currentScreen === "setup") {
@@ -66,7 +70,11 @@ export async function createCombinedUI(ink: any) {
             })}
             <Box justifyContent="center" marginTop={1}>
               <Text dimColor>
-                Press <Text bold color="cyan">T</Text> for Tag Setup • Space to force send • Ctrl+C to exit
+                Press{" "}
+                <Text bold color="cyan">
+                  T
+                </Text>{" "}
+                for Tag Setup • Space to force send • Ctrl+C to exit
               </Text>
             </Box>
           </>
@@ -78,7 +86,15 @@ export async function createCombinedUI(ink: any) {
             })}
             <Box justifyContent="center" marginTop={1}>
               <Text dimColor>
-                Press <Text bold color="cyan">D</Text> to return to Dashboard • <Text bold color="cyan">Q</Text> to quit setup • Ctrl+C to exit
+                Press{" "}
+                <Text bold color="cyan">
+                  D
+                </Text>{" "}
+                to return to Dashboard •{" "}
+                <Text bold color="cyan">
+                  Q
+                </Text>{" "}
+                to quit setup • Ctrl+C to exit
               </Text>
             </Box>
           </>

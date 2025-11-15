@@ -64,9 +64,7 @@ export async function createSetupUI(ink: any) {
       }
     };
 
-    const getStatusColor = (
-      tag: DiscoveredTag
-    ): "green" | "yellow" | "red" => {
+    const getStatusColor = (tag: DiscoveredTag): "green" | "yellow" | "red" => {
       const age = Math.floor((Date.now() - tag.lastSeen.getTime()) / 1000);
 
       if (age < 60) {
@@ -181,8 +179,8 @@ export async function createSetupUI(ink: any) {
                   <Text dimColor>
                     ... and {status.discoveredTags.size - 9} more tags
                   </Text>
-              )}
-            </Box>
+                )}
+              </Box>
             )}
 
             {/* Configured Tags */}
@@ -250,10 +248,10 @@ export async function createSetupUI(ink: any) {
               <Text bold color="blue">
                 -- Actions --
               </Text>
-              <Text>1-9  Set nickname for tag number</Text>
-              <Text>S    Save configuration to config.json</Text>
-              <Text>Q    Quit and save</Text>
-              <Text>R    Refresh display</Text>
+              <Text>1-9 Set nickname for tag number</Text>
+              <Text>S Save configuration to config.json</Text>
+              <Text>Q Quit and save</Text>
+              <Text>R Refresh display</Text>
             </Box>
 
             {/* Instructions */}
@@ -303,10 +301,10 @@ export async function createSetupUI(ink: any) {
                   -- Tips --
                 </Text>
                 <Text>• Choose descriptive names like 'Kitchen',</Text>
-                <Text>  'Bedroom', 'Outdoor'</Text>
+                <Text> 'Bedroom', 'Outdoor'</Text>
                 <Text>• Names will appear on your TRMNL display</Text>
                 <Text>• You can change names anytime by</Text>
-                <Text>  running this tool again</Text>
+                <Text> running this tool again</Text>
               </Box>
             )}
           </Box>

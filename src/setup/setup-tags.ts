@@ -48,10 +48,10 @@ class RuuviTagSetup {
   public async start(): Promise<void> {
     this.startTime = new Date();
     await this.display.start();
-    
+
     // Initialize cache manager to load existing data
     await this.cacheManager.initialize();
-    
+
     this.updateDisplay("Starting RuuviTag discovery...");
 
     this.setupRuuviListeners();
@@ -126,7 +126,7 @@ class RuuviTagSetup {
   private updateDisplay(currentAction?: string): void {
     // Get configured tags from cache
     const configuredTags = this.getConfiguredTags();
-    
+
     const status: any = {
       isScanning: this.isScanning,
       startTime: this.startTime,
@@ -141,17 +141,23 @@ class RuuviTagSetup {
     this.display.updateStatus(status);
   }
 
-  private getConfiguredTags(): Array<{ id: string; name: string; lastSeen?: Date }> {
+  private getConfiguredTags(): Array<{
+    id: string;
+    name: string;
+    lastSeen?: Date;
+  }> {
     const tags: Array<{ id: string; name: string; lastSeen?: Date }> = [];
-    
+
     try {
       const config = configManager.getConfig();
       const cachedData = this.cacheManager.getAllCachedTags();
-      
+
       // Go through all tags in config
-      for (const [shortId, nickname] of Object.entries(config.ruuvi.tagAliases)) {
+      for (const [shortId, nickname] of Object.entries(
+        config.ruuvi.tagAliases
+      )) {
         const cached = cachedData.find((c: any) => c.id === shortId);
-        
+
         if (cached?.lastUpdated) {
           tags.push({
             id: shortId,
@@ -168,7 +174,7 @@ class RuuviTagSetup {
     } catch (error) {
       // Config or cache might not exist yet
     }
-    
+
     return tags;
   }
 
