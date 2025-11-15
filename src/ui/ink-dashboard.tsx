@@ -265,7 +265,7 @@ export async function createDashboard(ink: any) {
             </Text>
             {status.lastSentData ? (
               <Box flexDirection="column">
-                <Text dimColor>
+                <Text color="gray">
                   {JSON.stringify(status.lastSentData, null, 2)}
                 </Text>
               </Box>
