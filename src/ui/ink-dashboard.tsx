@@ -225,10 +225,9 @@ export async function createDashboard(ink: any) {
                   const statusColor = getStatusColor(tag.status);
 
                   return (
-                    <Text key={tag.id}>
-                      <Text color={statusColor}>●</Text> {tag.name.padEnd(12)}{" "}
-                      {temp.padStart(7)} {humidity.padStart(5)}{" "}
-                      {battery.padStart(6)} ({age})
+                    <Text key={tag.id} color={statusColor}>
+                      ● {tag.name.padEnd(12)} {temp.padStart(7)}{" "}
+                      {humidity.padStart(5)} {battery.padStart(6)} ({age})
                     </Text>
                   );
                 })}
