@@ -48,6 +48,8 @@ export class RuuviTrmnlApp {
   private discoveredTags = new Map<string, DiscoveredTag>();
   private setupStartTime = new Date();
   private isSetupScanning = false;
+  private setupTagListeners = new Map<string, { tag: RawRuuviTag; listener: (data: RawRuuviData) => void }>(); // Track listeners for cleanup
+  private setupFoundListener: ((tag: RawRuuviTag) => void) | null = null; // Track main listener
 
   constructor(useConsoleDisplay: boolean = true, manualMode: boolean = false) {
     this.ruuviCollector = new RuuviCollector();
@@ -567,7 +569,27 @@ export class RuuviTrmnlApp {
     if (screen === "setup") {
       await this.initializeSetupMode();
       this.updateSetupDisplay("Entering setup mode...");
+    } else {
+      // Clean up listeners when leaving setup mode
+      this.cleanupSetupMode();
     }
+  }
+
+  private cleanupSetupMode(): void {
+    // Remove all tag listeners using stored references
+    for (const [tagId, { tag, listener }] of this.setupTagListeners.entries()) {
+      (tag as any).removeListener?.("updated", listener);
+    }
+    this.setupTagListeners.clear();
+
+    // Remove main found listener if it exists
+    if (this.setupFoundListener) {
+      ruuvi.removeListener("found", this.setupFoundListener);
+      this.setupFoundListener = null;
+    }
+
+    this.discoveredTags.clear();
+    this.isSetupScanning = false;
   }
 
   private async initializeSetupMode(): Promise<void> {
@@ -579,10 +601,13 @@ export class RuuviTrmnlApp {
     await this.setupCacheManager.initialize();
     this.discoveredTags.clear();
 
-    // Setup ruuvi listeners for setup mode
-    ruuvi.on("found", (tag: RawRuuviTag) => {
-      this.handleSetupTagFound(tag);
-    });
+    // Only setup listener if not already set
+    if (!this.setupFoundListener) {
+      this.setupFoundListener = (tag: RawRuuviTag) => {
+        this.handleSetupTagFound(tag);
+      };
+      ruuvi.on("found", this.setupFoundListener);
+    }
 
     this.isSetupScanning = true;
     
@@ -618,25 +643,29 @@ export class RuuviTrmnlApp {
       );
     }
 
-    // Listen for data updates
-    tag.on("updated", (data: RawRuuviData) => {
-      const existing = this.discoveredTags.get(tag.id);
-      if (existing) {
-        existing.lastSeen = new Date();
-        existing.data = {
-          ...(data.temperature !== undefined && {
-            temperature: data.temperature,
-          }),
-          ...(data.humidity !== undefined && { humidity: data.humidity }),
-          ...(data.pressure !== undefined && {
-            pressure: data.pressure / 100,
-          }),
-          ...(data.battery !== undefined && { battery: data.battery / 1000 }),
-          ...(data.rssi !== undefined && { rssi: data.rssi }),
-        };
-        this.updateSetupDisplay();
-      }
-    });
+    // Only attach listener once per tag to prevent memory leak
+    if (!this.setupTagListeners.has(tag.id)) {
+      const listener = (data: RawRuuviData) => {
+        const existing = this.discoveredTags.get(tag.id);
+        if (existing) {
+          existing.lastSeen = new Date();
+          existing.data = {
+            ...(data.temperature !== undefined && {
+              temperature: data.temperature,
+            }),
+            ...(data.humidity !== undefined && { humidity: data.humidity }),
+            ...(data.pressure !== undefined && {
+              pressure: data.pressure / 100,
+            }),
+            ...(data.battery !== undefined && { battery: data.battery / 1000 }),
+            ...(data.rssi !== undefined && { rssi: data.rssi }),
+          };
+          this.updateSetupDisplay();
+        }
+      };
+      this.setupTagListeners.set(tag.id, { tag, listener });
+      tag.on("updated", listener);
+    }
   }
 
   private async startSetupScanning(): Promise<void> {

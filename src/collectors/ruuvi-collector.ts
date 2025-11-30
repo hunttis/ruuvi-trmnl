@@ -10,6 +10,7 @@ export class RuuviCollector {
   private discoveredTags = new Set<string>();
   private isScanning = false;
   private cacheManager: CacheManager;
+  private tagListeners = new Set<string>(); // Track which tags have listeners attached
 
   constructor(cacheManager?: CacheManager) {
     this.cacheManager = cacheManager || new CacheManager();
