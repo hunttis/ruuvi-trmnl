@@ -59,6 +59,27 @@ export async function createDashboard(ink: any) {
       }
     };
 
+    const getStatusColorFromAge = (
+      lastUpdated: string
+    ): "green" | "yellow" | "red" => {
+      const age = Math.floor(
+        (Date.now() - new Date(lastUpdated).getTime()) / 1000
+      );
+
+      // Fresh data (< 1 minute)
+      if (age < 60) {
+        return "green";
+      }
+      // Recent data (< 5 minutes)
+      else if (age < 300) {
+        return "yellow";
+      }
+      // Old data (> 5 minutes)
+      else {
+        return "red";
+      }
+    };
+
     const getStatusColor = (
       tagStatus: string
     ): "green" | "yellow" | "red" | "gray" => {
@@ -222,12 +243,13 @@ export async function createDashboard(ink: any) {
                       ? `${tag.battery.toFixed(2)}V`
                       : "N/A";
                   const age = getDataAge(tag.lastUpdated);
-                  const statusColor = getStatusColor(tag.status);
+                  const statusColor = getStatusColorFromAge(tag.lastUpdated);
 
                   return (
-                    <Text key={tag.id} color={statusColor}>
-                      ● {tag.name.padEnd(12)} {temp.padStart(7)}{" "}
-                      {humidity.padStart(5)} {battery.padStart(6)} ({age})
+                    <Text key={tag.id}>
+                      <Text color={statusColor}>●</Text> {tag.name.padEnd(12)}{" "}
+                      {temp.padStart(7)} {humidity.padStart(5)}{" "}
+                      {battery.padStart(6)} ({age})
                     </Text>
                   );
                 })}
