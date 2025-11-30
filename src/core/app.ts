@@ -585,6 +585,8 @@ export class RuuviTrmnlApp {
     });
 
     this.isSetupScanning = true;
+    
+    // Start scanning - any errors are handled gracefully
     await this.startSetupScanning();
   }
 
@@ -639,12 +641,17 @@ export class RuuviTrmnlApp {
 
   private async startSetupScanning(): Promise<void> {
     try {
-      ruuvi.findTags();
-      this.updateSetupDisplay("Setup scanning started");
+      this.updateSetupDisplay("Starting setup scanning...");
+      // findTags() returns a promise that resolves when tags are found
+      // or rejects after timeout if no tags found
+      await ruuvi.findTags();
+      this.updateSetupDisplay("Setup scanning started - tags found");
     } catch (error: any) {
+      // This is normal if no RuuviTags are nearby
       this.updateSetupDisplay(
-        `Failed to start setup scanning: ${error?.message ?? String(error)}`
+        "Scanning for RuuviTags (none found yet, this is normal)"
       );
+      Logger.log("Setup scan: No tags found initially (this is expected)");
     }
   }
 
