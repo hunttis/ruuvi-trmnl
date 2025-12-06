@@ -40,10 +40,13 @@ export class RuuviCollector {
         });
       }
 
-      // Always set up the updated listener (even for rediscovered tags)
-      tag.on("updated", (data: RawRuuviData) => {
-        this.updateTagData(tag.id, data);
-      });
+      // Only attach listener once per tag to prevent memory leak
+      if (!this.tagListeners.has(tag.id)) {
+        this.tagListeners.add(tag.id);
+        tag.on("updated", (data: RawRuuviData) => {
+          this.updateTagData(tag.id, data);
+        });
+      }
     });
 
     ruuvi.on("warning", (message: string) => {

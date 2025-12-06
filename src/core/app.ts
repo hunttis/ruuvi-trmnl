@@ -42,13 +42,17 @@ export class RuuviTrmnlApp {
   private rateLimitedUntil: number = 0;
   private readonly rateLimitCooldown: number = 10 * 60 * 1000; // 10 minutes
   private readonly manualMode: boolean;
+  private processListenersAttached = false; // Track if process listeners are already set
 
   // Setup mode properties
   private setupCacheManager: CacheManager;
   private discoveredTags = new Map<string, DiscoveredTag>();
   private setupStartTime = new Date();
   private isSetupScanning = false;
-  private setupTagListeners = new Map<string, { tag: RawRuuviTag; listener: (data: RawRuuviData) => void }>(); // Track listeners for cleanup
+  private setupTagListeners = new Map<
+    string,
+    { tag: RawRuuviTag; listener: (data: RawRuuviData) => void }
+  >(); // Track listeners for cleanup
   private setupFoundListener: ((tag: RawRuuviTag) => void) | null = null; // Track main listener
 
   constructor(useConsoleDisplay: boolean = true, manualMode: boolean = false) {
@@ -397,6 +401,12 @@ export class RuuviTrmnlApp {
   }
 
   private setupGracefulShutdown(): void {
+    // Only attach listeners once to prevent accumulation
+    if (this.processListenersAttached) {
+      return;
+    }
+    this.processListenersAttached = true;
+
     const shutdown = async (signal: string) => {
       await this.stop();
       process.exit(0);
@@ -610,7 +620,7 @@ export class RuuviTrmnlApp {
     }
 
     this.isSetupScanning = true;
-    
+
     // Start scanning - any errors are handled gracefully
     await this.startSetupScanning();
   }
