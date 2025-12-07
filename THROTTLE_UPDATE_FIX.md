@@ -13,6 +13,7 @@ FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaS
 RuuviTags broadcast sensor data multiple times per second. The `updateTagData()` method was being called for EVERY broadcast, creating new objects and calling `cacheManager.updateTagData()` on each one.
 
 ### The Issue:
+
 - A typical RuuviTag broadcasts ~1-2 times per second
 - With multiple tags, this meant thousands of updates per minute
 - Each update created new Date objects and ISO strings
@@ -24,7 +25,8 @@ RuuviTags broadcast sensor data multiple times per second. The `updateTagData()`
 - The garbage collector couldn't keep up with the allocation rate
 
 ### Why This Was Critical:
-Even though individual objects were garbage collected, the *rate of allocation* was the problem. The V8 engine's GC was spending more and more time trying to free memory, eventually reaching "ineffective mark-compacts" where it couldn't free enough memory between allocations.
+
+Even though individual objects were garbage collected, the _rate of allocation_ was the problem. The V8 engine's GC was spending more and more time trying to free memory, eventually reaching "ineffective mark-compacts" where it couldn't free enough memory between allocations.
 
 ## Solution
 
@@ -44,7 +46,7 @@ export class RuuviCollector {
     const shouldUpdateCache = now - lastUpdate >= this.UPDATE_THROTTLE_MS;
 
     this.tagData.set(tagId, updatedTag);
-    
+
     // Only update cache (which is expensive) if enough time has passed
     if (shouldUpdateCache) {
       this.cacheManager.updateTagData(updatedTag);
@@ -57,18 +59,21 @@ export class RuuviCollector {
 ## Impact
 
 ### Before:
+
 - Cache updated multiple times per second per tag
 - With 5 tags broadcasting 2x/second: **600 cache updates per minute**
 - Over 2.4 hours: **~86,400 expensive operations**
 - Millions of temporary objects created
 
 ### After:
+
 - Cache updated maximum once per second per tag
 - With 5 tags: **300 cache updates per minute** (50% reduction)
 - Over 2.4 hours: **~43,200 operations** (50% reduction)
 - Significant reduction in object creation and GC pressure
 
 ### Trade-offs:
+
 - In-memory `tagData` Map is still updated on every broadcast (fast)
 - Cache updates (the expensive part) are throttled
 - Display shows real-time data (from `tagData` Map)
@@ -90,6 +95,7 @@ All 60 unit tests pass, including the listener accumulation tests. The throttlin
 ## Related Issues
 
 This complements the listener accumulation fixes in `MEMORY_LEAK_FIX.md`. Together, these fixes address:
+
 1. ✅ Event listener accumulation (fixed Nov 30 - Dec 6)
 2. ✅ Excessive object creation from high-frequency updates (fixed Dec 7)
 

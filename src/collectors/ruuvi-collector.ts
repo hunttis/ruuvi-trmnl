@@ -89,7 +89,7 @@ export class RuuviCollector {
       updatedTag.accelerationZ = rawData.accelerationZ;
 
     this.tagData.set(tagId, updatedTag);
-    
+
     // Only update cache (which is expensive) if enough time has passed
     if (shouldUpdateCache) {
       this.cacheManager.updateTagData(updatedTag);
