@@ -1,4 +1,5 @@
 # Memory Leak Fix (Nov 30, 2025)
+
 ## Updated: Dec 6, 2025 - Complete Memory Leak Audit
 
 ## Problem
@@ -66,7 +67,7 @@ private setupGracefulShutdown(): void {
     return;
   }
   this.processListenersAttached = true;
-  
+
   process.on("SIGINT", () => shutdown("SIGINT"));
   // ... rest of listeners
 }
@@ -78,6 +79,7 @@ private setupGracefulShutdown(): void {
 **Status**: ✅ Already fixed and still working correctly
 
 Two separate issues were fixed on Nov 30:
+
 - New `ruuvi.on("found")` listener added EVERY time user pressed T to enter setup mode
 - New `tag.on("updated")` listener attached for every tag discovery in setup mode
 - No cleanup when exiting setup mode (pressing D or Q)
@@ -87,16 +89,21 @@ The fix properly tracks listeners and cleans them up when exiting setup mode.
 ## Verified Safe Areas
 
 ### ✅ Timeouts in trmnl-sender.ts
+
 All `setTimeout` calls are properly cleared in both success and error paths.
 
 ### ✅ Intervals in Combined Display
+
 The `setInterval` in `ink-combined-display.ts` is properly stored and cleared in the `stop()` method.
 
 ### ✅ Cache Manager
+
 The cache object only stores data for configured tags (bounded by config). Old tag data is replaced, not accumulated.
 
 ### ✅ Maps and Sets
+
 All Maps and Sets are bounded:
+
 - `tagData` in RuuviCollector: Only stores discovered tags (bounded by physical tags)
 - `discoveredTags` in Setup Mode: Cleared when exiting setup
 - `setupTagListeners`: Properly cleared when exiting setup
@@ -104,22 +111,26 @@ All Maps and Sets are bounded:
 ## Impact
 
 ### Before
+
 - Memory grew unbounded
-- ~2000 MB consumption after 2 hours  
+- ~2000 MB consumption after 2 hours
 - Crash with heap out of memory
 
 ### After
+
 - Event listeners properly managed
 - Memory usage should remain stable
 - Listeners cleaned up when no longer needed
 - Process listeners only attached once
 
 ## Testing
+
 - All 50 tests pass
 - Build successful
 - Should be monitored during long-running sessions to confirm fix
 
 ## Files Changed
+
 - `src/collectors/ruuvi-collector.ts` - Re-applied fix to track and prevent duplicate tag listeners
 - `src/core/app.ts` - Added flag to prevent duplicate process listener attachment
 - `MEMORY_LEAK_FIX.md` - Updated with complete audit findings

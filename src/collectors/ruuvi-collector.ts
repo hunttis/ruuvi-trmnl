@@ -11,6 +11,8 @@ export class RuuviCollector {
   private isScanning = false;
   private cacheManager: CacheManager;
   private tagListeners = new Set<string>(); // Track which tags have listeners attached
+  private lastUpdateTime = new Map<string, number>(); // Track last update time per tag
+  private readonly UPDATE_THROTTLE_MS = 1000; // Only update cache once per second per tag
 
   constructor(cacheManager?: CacheManager) {
     this.cacheManager = cacheManager || new CacheManager();
@@ -58,6 +60,11 @@ export class RuuviCollector {
     const existing = this.tagData.get(tagId);
     if (!existing) return;
 
+    // Throttle updates to prevent excessive object creation and GC pressure
+    const now = Date.now();
+    const lastUpdate = this.lastUpdateTime.get(tagId) || 0;
+    const shouldUpdateCache = now - lastUpdate >= this.UPDATE_THROTTLE_MS;
+
     const updatedTag: RuuviTagData = {
       ...existing,
       lastUpdated: new Date().toISOString(),
@@ -82,7 +89,12 @@ export class RuuviCollector {
       updatedTag.accelerationZ = rawData.accelerationZ;
 
     this.tagData.set(tagId, updatedTag);
-    this.cacheManager.updateTagData(updatedTag);
+    
+    // Only update cache (which is expensive) if enough time has passed
+    if (shouldUpdateCache) {
+      this.cacheManager.updateTagData(updatedTag);
+      this.lastUpdateTime.set(tagId, now);
+    }
   }
 
   public startScanning(): void {
