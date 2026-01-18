@@ -147,12 +147,22 @@ def write_reading_to_cache(mac: str, data: dict):
     save_cache(cache)
 
 
+import asyncio
+
+
 def main():
     print(json.dumps({"status": "started"}), flush=True)
-    # get_datas will block scanning and call callback for each reading
-    # We run it with background=False so it returns only on KeyboardInterrupt
+    # Use async generator for macOS compatibility
+    async def run_scanner():
+        try:
+            async for mac, data in RuuviTagSensor.get_data_async():
+                callback(mac, data)
+        except Exception as exc:
+            print(json.dumps({"error": "scanner failure", "exception": str(exc)}), flush=True)
+            sys.exit(1)
+    
     try:
-        RuuviTagSensor.get_datas(callback=callback, background=False)
+        asyncio.run(run_scanner())
     except KeyboardInterrupt:
         pass
     except Exception as exc:
