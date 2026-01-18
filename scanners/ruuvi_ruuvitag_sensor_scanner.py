@@ -27,17 +27,34 @@ except Exception as e:
 
 
 def callback(mac, data):
-    # data is a dict with decoded fields documented by ruuvitag_sensor
-    out = {
-        "address": mac,
-        "timestamp": time.time(),
-        "data": data,
-    }
-    print(json.dumps(out), flush=True)
     try:
-        write_reading_to_cache(mac, data)
+        # Ensure data is JSON serializable
+        def make_serializable(obj):
+            if isinstance(obj, dict):
+                return {k: make_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [make_serializable(item) for item in obj]
+            elif isinstance(obj, (int, float, str, bool)) or obj is None:
+                return obj
+            else:
+                return str(obj)  # Convert non-serializable objects to strings
+        
+        serializable_data = make_serializable(data)
+        
+        # data is a dict with decoded fields documented by ruuvitag_sensor
+        out = {
+            "address": mac,
+            "timestamp": time.time(),
+            "data": serializable_data,
+        }
+        print(json.dumps(out), flush=True)
+        try:
+            write_reading_to_cache(mac, data)
+        except Exception as e:
+            print(json.dumps({"error": "failed to write cache", "exception": str(e)}), flush=True)
     except Exception as e:
-        print(json.dumps({"error": "failed to write cache", "exception": str(e)}), flush=True)
+        print(json.dumps({"error": "callback failed", "mac": mac, "exception": str(e)}), flush=True)
+        sys.exit(1)
 
 
 import os
@@ -187,11 +204,18 @@ def main():
     
     # Use async generator for macOS compatibility
     async def run_scanner():
+        print(json.dumps({"debug": "starting async scanner"}), flush=True)
+        tag_count = 0
         try:
-            print(json.dumps({"debug": "starting async scanner"}), flush=True)
             async for mac, data in RuuviTagSensor.get_data_async():
-                print(json.dumps({"debug": f"received data from {mac}"}), flush=True)
-                callback(mac, data)
+                tag_count += 1
+                try:
+                    print(json.dumps({"debug": f"received data from {mac} (tag #{tag_count})"}), flush=True)
+                    callback(mac, data)
+                    print(json.dumps({"debug": f"successfully processed data from {mac}"}), flush=True)
+                except Exception as callback_exc:
+                    print(json.dumps({"error": "callback failed", "mac": mac, "exception": str(callback_exc)}), flush=True)
+                    # Don't exit on callback errors - continue scanning
         except Exception as exc:
             print(json.dumps({"error": "scanner failure", "exception": str(exc), "traceback": traceback.format_exc()}), flush=True)
             sys.exit(1)
