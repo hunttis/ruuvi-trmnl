@@ -19,6 +19,12 @@ export class RuuviCollector {
     this.setupRuuviListeners();
   }
 
+  // Allow external scanners to push decoded data into this collector.
+  // `tagId` should be the full id string (MAC or ruuvi id) matching internal usage.
+  public processExternalReading(tagId: string, rawData: RawRuuviData): void {
+    this.updateTagData(tagId, rawData);
+  }
+
   public async initialize(): Promise<void> {
     await this.cacheManager.initialize();
   }
