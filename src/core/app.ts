@@ -7,6 +7,7 @@ import { Logger } from "@/lib/logger";
 import { green, red, blue } from "@/lib/colors";
 import { CacheManager } from "@/cache/cache-manager";
 import * as fs from "fs";
+import ScannerSupervisor from "@/collectors/scanner-supervisor";
 
 const ruuvi = require("node-ruuvitag");
 
@@ -43,6 +44,7 @@ export class RuuviTrmnlApp {
   private readonly rateLimitCooldown: number = 10 * 60 * 1000; // 10 minutes
   private readonly manualMode: boolean;
   private processListenersAttached = false; // Track if process listeners are already set
+  private scannerSupervisor: ScannerSupervisor | null = null;
 
   // Setup mode properties
   private setupCacheManager: CacheManager;
@@ -128,6 +130,37 @@ export class RuuviTrmnlApp {
       console.log("📁 Initializing cache system...");
     }
     await this.ruuviCollector.initialize();
+
+    // Start external scanner supervisor (if available) and subscribe to payloads
+    try {
+      this.scannerSupervisor = new ScannerSupervisor();
+      this.scannerSupervisor.start();
+
+      // Subscribe to payload events and forward to collector
+      this.scannerSupervisor.scannerInstance.on("payload", (p: any) => {
+        try {
+          const mac = p.address;
+          if (!mac) return;
+          const normalized = mac.replace(/:/g, "").toLowerCase();
+
+          const raw: RawRuuviData = {
+            temperature: p.data?.temperature,
+            humidity: p.data?.humidity,
+            // ruuvitag_sensor reports pressure in hPa; convert to Pa so collector normalizes it
+            pressure: p.data?.pressure ? Math.round(p.data.pressure * 100) : undefined,
+            // ruuvitag_sensor may report battery in volts; convert to mV for collector
+            battery: p.data?.battery ? Math.round(p.data.battery * 1000) : undefined,
+            rssi: p.data?.rssi,
+          } as RawRuuviData;
+
+          this.ruuviCollector.processExternalReading(normalized, raw);
+        } catch (err) {
+          Logger.warn("Failed processing external scanner payload: " + String(err));
+        }
+      });
+    } catch (err) {
+      Logger.warn("Failed to start ScannerSupervisor: " + String(err));
+    }
 
     // Load the most recent sent time from cache
     const cachedLastSentTime = this.ruuviCollector.getMostRecentSentTime();

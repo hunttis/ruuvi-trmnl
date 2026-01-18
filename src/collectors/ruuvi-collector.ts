@@ -22,7 +22,21 @@ export class RuuviCollector {
   // Allow external scanners to push decoded data into this collector.
   // `tagId` should be the full id string (MAC or ruuvi id) matching internal usage.
   public processExternalReading(tagId: string, rawData: RawRuuviData): void {
-    this.updateTagData(tagId, rawData);
+    // Normalize incoming tag id (remove colons and lowercase) to match cache keys
+    const normalized = tagId.replace(/:/g, "").toLowerCase();
+
+    // If we don't already have data for this tag, create a new placeholder
+    if (!this.tagData.has(normalized)) {
+      const shortId = normalized.substring(0, 8);
+      this.tagData.set(normalized, {
+        id: shortId,
+        name: configManager.getTagAlias(shortId),
+        lastUpdated: new Date().toISOString(),
+        status: "active",
+      });
+    }
+
+    this.updateTagData(normalized, rawData);
   }
 
   public async initialize(): Promise<void> {

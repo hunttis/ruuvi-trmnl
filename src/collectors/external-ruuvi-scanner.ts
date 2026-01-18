@@ -21,6 +21,11 @@ export class ExternalRuuviScanner extends EventEmitter {
     this.scriptPath = scriptPath;
   }
 
+  // Expose the child process for supervisors to inspect (pid, etc.)
+  public get procHandle(): ChildProcess | null {
+    return this.proc;
+  }
+
   public start(): void {
     if (this.proc) return;
 
