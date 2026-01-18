@@ -6,19 +6,25 @@ it to the Node app.
 Requirements (scanner):
 
 - Python 3.8+
-- pip install bleak
-
-Run the scanner standalone:
+- Install Python dependencies:
 
 ```bash
-python3 scanners/ble_scanner.py
+python3 -m pip install ruuvitag_sensor bleak
 ```
 
-It will print JSON lines to stdout. Example output:
+Run the scanner standalone (decoded Ruuvi payloads):
 
-{"address":"AA:BB:CC:DD:EE:FF","rssi":-56,"manufacturer_data":{"1177":"03021..."},"timestamp":...}
+```bash
+python3 scanners/ruuvi_ruuvitag_sensor_scanner.py
+```
 
-Consume it from Node.js (prototype already included): use `ExternalRuuviScanner` from `src/collectors/external-ruuvi-scanner.ts`.
+It will print decoded JSON lines to stdout. Example output:
+
+```json
+{"address":"AA:BB:CC:DD:EE:FF","timestamp":1670000000.0,"data":{"temperature":22.1,"humidity":45.0,"pressure":1013.2,"battery":3.05,"rssi":-56,"accelerationX":0.0,"accelerationY":0.0,"accelerationZ":0.0}}
+```
+
+Consume it from Node.js using `ExternalRuuviScanner` from `src/collectors/external-ruuvi-scanner.ts`.
 
 Example integration (high-level):
 
@@ -27,17 +33,21 @@ import { ExternalRuuviScanner } from "@/collectors/external-ruuvi-scanner";
 import { RuuviCollector } from "@/collectors/ruuvi-collector";
 
 const collector = new RuuviCollector();
-const scanner = new ExternalRuuviScanner("python3", "scanners/ble_scanner.py");
+// Use the ruuvi_sensor-backed script which outputs decoded data
+const scanner = new ExternalRuuviScanner("python3", "scanners/ruuvi_ruuvitag_sensor_scanner.py");
 
 scanner.on("payload", (p) => {
-  // p.manufacturer_data is a map company_id->hexstring
-  // If company id 1177 found, decode payload and send to collector.processExternalReading
-  const md = p.manufacturer_data?.["1177"];
-  if (!md) return;
-  // Decode in Node (or extend to decode in Python). For prototype, forward raw values:
+  // p.data is a decoded object from ruuvitag_sensor
+  if (!p.data) return;
   collector.processExternalReading(p.address, {
-    rssi: p.rssi,
-    // other fields can be filled after decoding
+    temperature: p.data["temperature"] ?? undefined,
+    humidity: p.data["humidity"] ?? undefined,
+    pressure: p.data["pressure"] ?? undefined,
+    battery: p.data["battery"] ?? undefined,
+    rssi: p.data["rssi"] ?? undefined,
+    accelerationX: p.data["accelerationX"] ?? undefined,
+    accelerationY: p.data["accelerationY"] ?? undefined,
+    accelerationZ: p.data["accelerationZ"] ?? undefined,
   });
 });
 
@@ -45,5 +55,5 @@ scanner.start();
 ```
 
 Notes:
-- This prototype sends manufacturer_data as hex. You can decode Ruuvi payloads either in Python (using `ruuvitag_sensor`) or in Node (using a JS decoder package).
+- This script uses `ruuvitag_sensor` to decode manufacturer payloads so the Node app receives ready-to-use fields.
 - The scanner process can be supervised and restarted if it grows in memory; this isolates leaks to the scanner process.
