@@ -45,6 +45,11 @@ export class RuuviTrmnlApp {
   private readonly manualMode: boolean;
   private processListenersAttached = false; // Track if process listeners are already set
   private scannerSupervisor: ScannerSupervisor | null = null;
+  private scannerStatus: {
+    running: boolean;
+    lastError?: string;
+    restarts?: number;
+  } = { running: false };
 
   // Setup mode properties
   private setupCacheManager: CacheManager;
@@ -136,6 +141,36 @@ export class RuuviTrmnlApp {
       this.scannerSupervisor = new ScannerSupervisor();
       this.scannerSupervisor.start();
 
+      // Track scanner status
+      this.scannerStatus = { running: true, restarts: 0 };
+
+      this.scannerSupervisor.scannerInstance.on("started", () => {
+        this.scannerStatus.running = true;
+        delete this.scannerStatus.lastError;
+        this.updateConsoleDisplay();
+      });
+
+      this.scannerSupervisor.scannerInstance.on("stderr", (msg: string) => {
+        Logger.warn(`Scanner stderr: ${msg}`);
+        this.scannerStatus.lastError = msg;
+        this.updateConsoleDisplay();
+      });
+
+      this.scannerSupervisor.scannerInstance.on("error", (err: Error) => {
+        Logger.error(`Scanner error: ${err.message}`);
+        this.scannerStatus.lastError = err.message;
+        this.scannerStatus.running = false;
+        this.updateConsoleDisplay();
+      });
+
+      this.scannerSupervisor.scannerInstance.on("exit", (code: number) => {
+        Logger.warn(`Scanner exited with code ${code}`);
+        this.scannerStatus.running = false;
+        this.scannerStatus.lastError = `Exited with code ${code}`;
+        this.scannerStatus.restarts = (this.scannerStatus.restarts || 0) + 1;
+        this.updateConsoleDisplay();
+      });
+
       // Subscribe to payload events and forward to collector
       this.scannerSupervisor.scannerInstance.on("payload", (p: any) => {
         try {
@@ -147,15 +182,21 @@ export class RuuviTrmnlApp {
             temperature: p.data?.temperature,
             humidity: p.data?.humidity,
             // ruuvitag_sensor reports pressure in hPa; convert to Pa so collector normalizes it
-            pressure: p.data?.pressure ? Math.round(p.data.pressure * 100) : undefined,
+            pressure: p.data?.pressure
+              ? Math.round(p.data.pressure * 100)
+              : undefined,
             // ruuvitag_sensor may report battery in volts; convert to mV for collector
-            battery: p.data?.battery ? Math.round(p.data.battery * 1000) : undefined,
+            battery: p.data?.battery
+              ? Math.round(p.data.battery * 1000)
+              : undefined,
             rssi: p.data?.rssi,
           } as RawRuuviData;
 
           this.ruuviCollector.processExternalReading(normalized, raw);
         } catch (err) {
-          Logger.warn("Failed processing external scanner payload: " + String(err));
+          Logger.warn(
+            "Failed processing external scanner payload: " + String(err)
+          );
         }
       });
     } catch (err) {
@@ -316,6 +357,9 @@ export class RuuviTrmnlApp {
       (status as any).rateLimitRemainingMinutes =
         this.getRateLimitRemainingTime();
     }
+
+    // Add scanner status
+    (status as any).scannerStatus = this.scannerStatus;
 
     if (isError && message) {
       (status as any).lastError = message;

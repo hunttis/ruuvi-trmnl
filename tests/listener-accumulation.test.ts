@@ -62,6 +62,12 @@ describe("Listener Accumulation Prevention", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockConfigManager.getConfig.mockReturnValue(mockConfig);
+    mockConfigManager.getOrderedTagIds.mockReturnValue(
+      Object.keys(mockConfig.ruuvi.tagAliases)
+    );
+    mockConfigManager.getTrmnlWebhookUrl.mockReturnValue(
+      mockConfig.trmnl.webhookUrl
+    );
     mockConfigManager.getTagAlias.mockImplementation((id: string) => {
       const shortId = id.substring(0, 8);
       const aliases = mockConfig.ruuvi.tagAliases as Record<string, string>;

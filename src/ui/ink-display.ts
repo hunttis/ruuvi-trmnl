@@ -36,6 +36,11 @@ export interface AppStatus {
   lastError?: string;
   rateLimitedUntil?: Date;
   rateLimitRemainingMinutes?: number;
+  scannerStatus?: {
+    running: boolean;
+    lastError?: string;
+    restarts?: number;
+  };
 }
 
 export class InkDisplay {

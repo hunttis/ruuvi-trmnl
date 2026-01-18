@@ -153,6 +153,37 @@ export async function createDashboard(ink: any) {
               <Text>Uptime: {formatDuration(uptime)}</Text>
             </Box>
 
+            {/* Scanner Status */}
+            {status.scannerStatus && (
+              <Box
+                flexDirection="column"
+                marginBottom={1}
+                borderStyle="round"
+                borderColor="magenta"
+                paddingX={1}
+              >
+                <Text bold color="blue">
+                  -- Scanner Status --
+                </Text>
+                <Text>
+                  Running:{" "}
+                  {status.scannerStatus.running ? (
+                    <Text color="green">Active</Text>
+                  ) : (
+                    <Text color="red">Stopped</Text>
+                  )}
+                </Text>
+                {status.scannerStatus.lastError && (
+                  <Text color="red">
+                    Last Error: {status.scannerStatus.lastError}
+                  </Text>
+                )}
+                {status.scannerStatus.restarts !== undefined && (
+                  <Text>Restarts: {status.scannerStatus.restarts}</Text>
+                )}
+              </Box>
+            )}
+
             {/* TRMNL Connection */}
             <Box
               flexDirection="column"
