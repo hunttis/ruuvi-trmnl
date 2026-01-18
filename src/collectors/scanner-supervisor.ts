@@ -19,7 +19,7 @@ export class ScannerSupervisor {
 
   constructor(opts?: SupervisorOptions) {
     this.opts = {
-      pythonPath: opts?.pythonPath || "python3",
+      pythonPath: opts?.pythonPath || process.env.PYTHON_PATH || "python3",
       scriptPath: opts?.scriptPath || "scanners/ruuvi_ruuvitag_sensor_scanner.py",
       pollIntervalMs: opts?.pollIntervalMs ?? 30_000,
       maxRssKb: opts?.maxRssKb ?? 200 * 1024, // 200 MB
