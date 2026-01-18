@@ -148,25 +148,62 @@ def write_reading_to_cache(mac: str, data: dict):
 
 
 import asyncio
+import traceback
+import sys
+
+
+def check_bluetooth_permissions():
+    """Check if Bluetooth is available and accessible"""
+    try:
+        import asyncio
+        from bleak import BleakScanner
+        
+        async def test_ble():
+            try:
+                print(json.dumps({"debug": "testing Bluetooth availability"}), flush=True)
+                scanner = BleakScanner()
+                await scanner.start()
+                await asyncio.sleep(1)
+                await scanner.stop()
+                print(json.dumps({"debug": "Bluetooth test successful"}), flush=True)
+                return True
+            except Exception as e:
+                print(json.dumps({"error": "Bluetooth test failed", "exception": str(e)}), flush=True)
+                return False
+        
+        return asyncio.run(test_ble())
+    except Exception as e:
+        print(json.dumps({"error": "Failed to import bleak for Bluetooth test", "exception": str(e)}), flush=True)
+        return False
 
 
 def main():
     print(json.dumps({"status": "started"}), flush=True)
+    
+    # Check Bluetooth permissions first
+    if not check_bluetooth_permissions():
+        print(json.dumps({"error": "Bluetooth not available or permission denied"}), flush=True)
+        sys.exit(1)
+    
     # Use async generator for macOS compatibility
     async def run_scanner():
         try:
+            print(json.dumps({"debug": "starting async scanner"}), flush=True)
             async for mac, data in RuuviTagSensor.get_data_async():
+                print(json.dumps({"debug": f"received data from {mac}"}), flush=True)
                 callback(mac, data)
         except Exception as exc:
-            print(json.dumps({"error": "scanner failure", "exception": str(exc)}), flush=True)
+            print(json.dumps({"error": "scanner failure", "exception": str(exc), "traceback": traceback.format_exc()}), flush=True)
             sys.exit(1)
     
     try:
+        print(json.dumps({"debug": "calling asyncio.run"}), flush=True)
         asyncio.run(run_scanner())
     except KeyboardInterrupt:
+        print(json.dumps({"debug": "received keyboard interrupt"}), flush=True)
         pass
     except Exception as exc:
-        print(json.dumps({"error": "scanner failure", "exception": str(exc)}), flush=True)
+        print(json.dumps({"error": "scanner failure", "exception": str(exc), "traceback": traceback.format_exc()}), flush=True)
         sys.exit(1)
 
 
