@@ -28,7 +28,8 @@ export class ExternalRuuviScanner extends EventEmitter {
       stdio: ["ignore", "pipe", "pipe"],
     });
 
-    if (!this.proc.stdout) throw new Error("Failed to open stdout on scanner process");
+    if (!this.proc.stdout)
+      throw new Error("Failed to open stdout on scanner process");
 
     const rl = readline.createInterface({ input: this.proc.stdout });
 

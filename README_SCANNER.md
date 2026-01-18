@@ -21,7 +21,20 @@ python3 scanners/ruuvi_ruuvitag_sensor_scanner.py
 It will print decoded JSON lines to stdout. Example output:
 
 ```json
-{"address":"AA:BB:CC:DD:EE:FF","timestamp":1670000000.0,"data":{"temperature":22.1,"humidity":45.0,"pressure":1013.2,"battery":3.05,"rssi":-56,"accelerationX":0.0,"accelerationY":0.0,"accelerationZ":0.0}}
+{
+  "address": "AA:BB:CC:DD:EE:FF",
+  "timestamp": 1670000000.0,
+  "data": {
+    "temperature": 22.1,
+    "humidity": 45.0,
+    "pressure": 1013.2,
+    "battery": 3.05,
+    "rssi": -56,
+    "accelerationX": 0.0,
+    "accelerationY": 0.0,
+    "accelerationZ": 0.0
+  }
+}
 ```
 
 Consume it from Node.js using `ExternalRuuviScanner` from `src/collectors/external-ruuvi-scanner.ts`.
@@ -34,7 +47,10 @@ import { RuuviCollector } from "@/collectors/ruuvi-collector";
 
 const collector = new RuuviCollector();
 // Use the ruuvi_sensor-backed script which outputs decoded data
-const scanner = new ExternalRuuviScanner("python3", "scanners/ruuvi_ruuvitag_sensor_scanner.py");
+const scanner = new ExternalRuuviScanner(
+  "python3",
+  "scanners/ruuvi_ruuvitag_sensor_scanner.py"
+);
 
 scanner.on("payload", (p) => {
   // p.data is a decoded object from ruuvitag_sensor
@@ -55,5 +71,6 @@ scanner.start();
 ```
 
 Notes:
+
 - This script uses `ruuvitag_sensor` to decode manufacturer payloads so the Node app receives ready-to-use fields.
 - The scanner process can be supervised and restarted if it grows in memory; this isolates leaks to the scanner process.
