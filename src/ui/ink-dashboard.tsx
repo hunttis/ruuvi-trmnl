@@ -123,9 +123,9 @@ export async function createDashboard(ink: any) {
         </Box>
 
         <Box flexDirection="row" marginBottom={1}>
-          {/* Left Column */}
-          <Box flexDirection="column" width="60%" paddingRight={1}>
-            {/* Application Status */}
+          {/* Left Column - Compact Status */}
+          <Box flexDirection="column" width="50%" paddingRight={1}>
+            {/* Combined Status Box */}
             <Box
               flexDirection="column"
               marginBottom={1}
@@ -134,133 +134,61 @@ export async function createDashboard(ink: any) {
               paddingX={1}
             >
               <Text bold color="blue">
-                -- Application Status --
+                -- Status --
               </Text>
+
+              {/* App Status */}
               <Text>
-                Running:{" "}
-                {status.isRunning ? (
-                  <Text color="green">Active</Text>
-                ) : (
-                  <Text color="red">Stopped</Text>
-                )}
+                App: {status.isRunning ? "🟢 Active" : "🔴 Stopped"} | Uptime:{" "}
+                {formatDuration(uptime)}
               </Text>
-              <Text>Started: {formatDateTime(status.startTime)}</Text>
-              {status.lastUpdateTime && (
-                <Text>
-                  Last Update: {formatDateTime(status.lastUpdateTime)}
-                </Text>
-              )}
-              <Text>Uptime: {formatDuration(uptime)}</Text>
-            </Box>
 
-            {/* Scanner Status */}
-            {status.scannerStatus && (
-              <Box
-                flexDirection="column"
-                marginBottom={1}
-                borderStyle="round"
-                borderColor="magenta"
-                paddingX={1}
-              >
-                <Text bold color="blue">
-                  -- Scanner Status --
-                </Text>
+              {/* Scanner Status */}
+              {status.scannerStatus && (
                 <Text>
-                  Running:{" "}
-                  {status.scannerStatus.running ? (
-                    <Text color="green">Active</Text>
-                  ) : (
-                    <Text color="red">Stopped</Text>
-                  )}
+                  Scanner:{" "}
+                  {status.scannerStatus.running ? "🟢 Active" : "🔴 Stopped"}
+                  {status.scannerStatus.restarts
+                    ? ` (${status.scannerStatus.restarts} restarts)`
+                    : ""}
                 </Text>
-                {status.scannerStatus.lastError && (
-                  <Text color="red">
-                    Last Error: {status.scannerStatus.lastError}
-                  </Text>
-                )}
-                {status.scannerStatus.restarts !== undefined && (
-                  <Text>Restarts: {status.scannerStatus.restarts}</Text>
-                )}
-              </Box>
-            )}
+              )}
 
-            {/* TRMNL Connection */}
-            <Box
-              flexDirection="column"
-              marginBottom={1}
-              borderStyle="round"
-              borderColor="cyan"
-              paddingX={1}
-            >
-              <Text bold color="blue">
-                -- TRMNL Connection --
-              </Text>
-              <Text>Webhook: {maskWebhook(status.webhookInfo.url)}</Text>
-              <Text>Strategy: {status.webhookInfo.strategy}</Text>
-              <Text>Total Updates Sent: {status.trmnlStats.totalSent}</Text>
-              {status.lastSentTime && (
-                <Text>Last Sent: {formatDateTime(status.lastSentTime)}</Text>
-              )}
-              {timeUntilNext !== undefined && (
-                <Text>
-                  Next Send:{" "}
-                  {timeUntilNext > 0 ? formatDuration(timeUntilNext) : "Now"}
-                </Text>
-              )}
-              {status.rateLimitedUntil &&
-                status.rateLimitRemainingMinutes !== undefined && (
-                  <Text color="red">
-                    Rate Limited: {status.rateLimitRemainingMinutes.toFixed(1)}{" "}
-                    min remaining
-                  </Text>
-                )}
-              {status.trmnlStats.lastResponseCode !== undefined && (
-                <Text
-                  color={
-                    status.trmnlStats.lastResponseCode < 400 ? "green" : "red"
-                  }
-                >
-                  Last Response: HTTP {status.trmnlStats.lastResponseCode}
-                </Text>
-              )}
-              {status.trmnlStats.lastResponseMessage && (
-                <Text>Message: {status.trmnlStats.lastResponseMessage}</Text>
-              )}
-            </Box>
-
-            {/* Statistics */}
-            <Box
-              flexDirection="column"
-              marginBottom={1}
-              borderStyle="round"
-              borderColor="green"
-              paddingX={1}
-            >
-              <Text bold color="blue">
-                -- Statistics --
-              </Text>
+              {/* TRMNL Status */}
               <Text>
-                Discovered Tags: {status.collectorStats.totalDiscovered}
+                TRMNL: {status.trmnlStats.totalSent} sent
+                {status.rateLimitedUntil ? " | 🔴 Rate limited" : " | 🟢 OK"}
               </Text>
-              <Text>Active Tags: {status.collectorStats.activeCount}</Text>
-              <Text>Stale Tags: {status.collectorStats.staleCount}</Text>
-              <Text>Configured Tags: {status.cacheStats.allowedTags}</Text>
-              <Text>Pending Changes: {status.cacheStats.pendingSend}</Text>
+
+              {/* Statistics */}
+              <Text>
+                Tags: {status.collectorStats.totalDiscovered} discovered,{" "}
+                {status.collectorStats.activeCount} active
+              </Text>
+
+              {/* Last Error */}
+              {(status.scannerStatus?.lastError ||
+                status.trmnlStats.lastResponseMessage) && (
+                <Text color="red">
+                  Error:{" "}
+                  {status.scannerStatus?.lastError ||
+                    status.trmnlStats.lastResponseMessage}
+                </Text>
+              )}
             </Box>
 
-            {/* Sensor Readings */}
+            {/* Sensor Readings - Compact */}
             {status.tags && status.tags.length > 0 && (
               <Box
                 flexDirection="column"
-                marginBottom={1}
                 borderStyle="round"
-                borderColor="yellow"
+                borderColor="green"
                 paddingX={1}
               >
                 <Text bold color="blue">
-                  -- Sensor Readings --
+                  -- Latest Readings --
                 </Text>
-                {status.tags.map((tag: any) => {
+                {status.tags.slice(0, 4).map((tag: any) => {
                   const temp =
                     tag.temperature !== undefined
                       ? `${tag.temperature.toFixed(1)}°C`
@@ -269,57 +197,53 @@ export async function createDashboard(ink: any) {
                     tag.humidity !== undefined
                       ? `${tag.humidity.toFixed(0)}%`
                       : "N/A";
-                  const battery =
-                    tag.battery !== undefined
-                      ? `${tag.battery.toFixed(2)}V`
-                      : "N/A";
                   const age = getDataAge(tag.lastUpdated);
                   const statusColor = getStatusColorFromAge(tag.lastUpdated);
 
                   return (
                     <Text key={tag.id}>
-                      <Text color={statusColor}>●</Text> {tag.name.padEnd(12)}{" "}
-                      {temp.padStart(7)} {humidity.padStart(5)}{" "}
-                      {battery.padStart(6)} ({age})
+                      <Text color={statusColor}>●</Text> {tag.name || tag.id}:{" "}
+                      {temp}, {humidity} ({age})
                     </Text>
                   );
                 })}
-              </Box>
-            )}
-
-            {/* Error */}
-            {status.lastError && (
-              <Box
-                flexDirection="column"
-                borderStyle="round"
-                borderColor="red"
-                paddingX={1}
-              >
-                <Text bold color="red">
-                  Latest Error
-                </Text>
-                <Text color="red">{status.lastError}</Text>
+                {status.tags.length > 4 && (
+                  <Text color="gray">
+                    ... and {status.tags.length - 4} more
+                  </Text>
+                )}
               </Box>
             )}
           </Box>
 
-          {/* Right Column */}
+          {/* Right Column - Compact TRMNL Data */}
           <Box
             flexDirection="column"
-            width="40%"
+            width="45%"
             paddingLeft={1}
             borderStyle="round"
             borderColor="magenta"
             paddingX={1}
           >
             <Text bold color="green">
-              -- Latest TRMNL Data --
+              -- TRMNL Status --
             </Text>
             {status.lastSentData ? (
               <Box flexDirection="column">
-                <Text color="gray">
-                  {JSON.stringify(status.lastSentData, null, 2)}
+                <Text>Last Sent: {formatDateTime(status.lastSentTime!)}</Text>
+                <Text>Tags: {status.lastSentData.tags?.length || 0}</Text>
+                <Text>
+                  Size: {JSON.stringify(status.lastSentData).length} chars
                 </Text>
+                {status.trmnlStats.lastResponseCode && (
+                  <Text
+                    color={
+                      status.trmnlStats.lastResponseCode < 400 ? "green" : "red"
+                    }
+                  >
+                    Response: HTTP {status.trmnlStats.lastResponseCode}
+                  </Text>
+                )}
               </Box>
             ) : (
               <Box flexDirection="column">

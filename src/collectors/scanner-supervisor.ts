@@ -27,9 +27,11 @@ export class ScannerSupervisor {
       maxBackoffMs: opts?.maxBackoffMs ?? 60_000,
     };
 
+    Logger.log(`Supervisor: using Python path: ${this.opts.pythonPath}`);
+
     this.scanner = new ExternalRuuviScanner(
       this.opts.pythonPath,
-      this.opts.scriptPath
+      this.opts.scriptPath,
     );
 
     this.scanner.on("started", () => {
@@ -39,11 +41,11 @@ export class ScannerSupervisor {
     });
 
     this.scanner.on("stderr", (m: string) =>
-      Logger.warn(`Scanner stderr: ${m}`)
+      Logger.warn(`Scanner stderr: ${m}`),
     );
 
     this.scanner.on("error", (err: Error) =>
-      Logger.error(`Scanner error: ${err.message}`)
+      Logger.error(`Scanner error: ${err.message}`),
     );
 
     this.scanner.on("exit", (code: number) => {
@@ -61,6 +63,7 @@ export class ScannerSupervisor {
   public start(): void {
     if ((this as any).running) return;
     Logger.log("Supervisor: starting scanner");
+    // Attempt to detect an externally started scanner (do not spawn it)
     this.scanner.start();
     (this as any).running = true;
   }
@@ -74,14 +77,15 @@ export class ScannerSupervisor {
   }
 
   private scheduleRestart(): void {
+    // When the scanner is an externally managed process we will not attempt
+    // to restart it. Just log and allow detection to pick it up when it
+    // returns.
     this.clearRestartTimer();
     const wait = Math.min(this.backoffMs, this.opts.maxBackoffMs);
-    Logger.log(`Supervisor: scheduling restart in ${wait}ms`);
-    this.restartTimer = setTimeout(() => {
-      Logger.log("Supervisor: restarting scanner now");
-      this.scanner.start();
-      this.backoffMs = Math.min(this.backoffMs * 2, this.opts.maxBackoffMs);
-    }, wait);
+    Logger.log(
+      `Supervisor: scanner absent — will not attempt restart (backoff ${wait}ms)`,
+    );
+    this.backoffMs = Math.min(this.backoffMs * 2, this.opts.maxBackoffMs);
   }
 
   private clearRestartTimer(): void {
@@ -95,7 +99,7 @@ export class ScannerSupervisor {
     this.stopMemoryPoll();
     this.pollTimer = setInterval(
       () => this.checkChildMemory(),
-      this.opts.pollIntervalMs
+      this.opts.pollIntervalMs,
     );
   }
 
@@ -115,7 +119,7 @@ export class ScannerSupervisor {
     exec(`ps -o rss= -p ${pid}`, (err, stdout) => {
       if (err) {
         Logger.warn(
-          `Supervisor: failed to read RSS for pid ${pid}: ${String(err)}`
+          `Supervisor: failed to read RSS for pid ${pid}: ${String(err)}`,
         );
         return;
       }
@@ -123,15 +127,11 @@ export class ScannerSupervisor {
       Logger.log(`Supervisor: scanner pid=${pid} rss=${rssKb}KB`);
       if (rssKb > this.opts.maxRssKb) {
         Logger.warn(
-          `Supervisor: RSS ${rssKb}KB exceeded ${this.opts.maxRssKb}KB, restarting scanner`
+          `Supervisor: RSS ${rssKb}KB exceeded ${this.opts.maxRssKb}KB`,
         );
-        try {
-          proc.kill();
-        } catch (e) {
-          Logger.error(
-            `Supervisor: failed to kill scanner pid ${pid}: ${String(e)}`
-          );
-        }
+        Logger.warn(
+          "Supervisor: not killing externally managed scanner process",
+        );
       }
     });
   }

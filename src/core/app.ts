@@ -74,10 +74,10 @@ export class RuuviTrmnlApp {
       Logger.setSuppressConsole(true);
       this.consoleDisplay.setForceSendCallback(() => this.forceSendData());
       this.consoleDisplay.setSetupKeyPressCallback((key: string) =>
-        this.handleSetupKeyPress(key)
+        this.handleSetupKeyPress(key),
       );
       this.consoleDisplay.setScreenChangeCallback((screen: string) =>
-        this.handleScreenChange(screen as "dashboard" | "setup")
+        this.handleScreenChange(screen as "dashboard" | "setup"),
       );
     }
 
@@ -94,6 +94,29 @@ export class RuuviTrmnlApp {
     const hh = String(date.getHours()).padStart(2, "0");
     const mm = String(date.getMinutes()).padStart(2, "0");
     return `${yy}-${MM}-${dd} ${hh}:${mm}`;
+  }
+
+  private detectVenvPythonPath(): string | null {
+    const possiblePaths = [
+      "./venv/bin/python3",
+      "./venv/bin/python",
+      "../venv/bin/python3",
+      "../venv/bin/python",
+      "./.venv/bin/python3",
+      "./.venv/bin/python",
+    ];
+
+    for (const path of possiblePaths) {
+      try {
+        if (fs.existsSync(path)) {
+          return path;
+        }
+      } catch (err) {
+        // Ignore errors
+      }
+    }
+
+    return null;
   }
 
   public async start(): Promise<void> {
@@ -120,11 +143,11 @@ export class RuuviTrmnlApp {
       if (this.useConsoleDisplay) {
         this.updateConsoleDisplay(
           "⚡ TRMNL connection test failed. Will try sending data anyway.",
-          true
+          true,
         );
       } else {
         Logger.warn(
-          "⚡ TRMNL connection test failed. Will try sending data anyway."
+          "⚡ TRMNL connection test failed. Will try sending data anyway.",
         );
       }
     }
@@ -138,6 +161,13 @@ export class RuuviTrmnlApp {
 
     // Start external scanner supervisor (if available) and subscribe to payloads
     try {
+      // Detect Python venv path
+      const venvPythonPath = this.detectVenvPythonPath();
+      if (venvPythonPath) {
+        process.env.PYTHON_PATH = venvPythonPath;
+        Logger.log(`Using Python venv: ${venvPythonPath}`);
+      }
+
       this.scannerSupervisor = new ScannerSupervisor();
       this.scannerSupervisor.start();
 
@@ -171,34 +201,9 @@ export class RuuviTrmnlApp {
         this.updateConsoleDisplay();
       });
 
-      // Subscribe to payload events and forward to collector
-      this.scannerSupervisor.scannerInstance.on("payload", (p: any) => {
-        try {
-          const mac = p.address;
-          if (!mac) return;
-          const normalized = mac.replace(/:/g, "").toLowerCase();
-
-          const raw: RawRuuviData = {
-            temperature: p.data?.temperature,
-            humidity: p.data?.humidity,
-            // ruuvitag_sensor reports pressure in hPa; convert to Pa so collector normalizes it
-            pressure: p.data?.pressure
-              ? Math.round(p.data.pressure * 100)
-              : undefined,
-            // ruuvitag_sensor may report battery in volts; convert to mV for collector
-            battery: p.data?.battery
-              ? Math.round(p.data.battery * 1000)
-              : undefined,
-            rssi: p.data?.rssi,
-          } as RawRuuviData;
-
-          this.ruuviCollector.processExternalReading(normalized, raw);
-        } catch (err) {
-          Logger.warn(
-            "Failed processing external scanner payload: " + String(err)
-          );
-        }
-      });
+      // External scanner mode: the Python scanner runs separately and writes
+      // updates into the shared cache file. The Node-side `CacheManager` will
+      // pick up those changes; we don't consume JSON payloads over stdout.
     } catch (err) {
       Logger.warn("Failed to start ScannerSupervisor: " + String(err));
     }
@@ -208,11 +213,11 @@ export class RuuviTrmnlApp {
     if (cachedLastSentTime > 0) {
       this.lastSentTime = cachedLastSentTime;
       const minutesSinceLastSend = Math.floor(
-        (Date.now() - cachedLastSentTime) / (60 * 1000)
+        (Date.now() - cachedLastSentTime) / (60 * 1000),
       );
       if (this.useConsoleDisplay) {
         this.updateConsoleDisplay(
-          `📅 Last send was ${minutesSinceLastSend} minute(s) ago`
+          `📅 Last send was ${minutesSinceLastSend} minute(s) ago`,
         );
       } else {
         console.log(`📅 Last send was ${minutesSinceLastSend} minute(s) ago`);
@@ -237,7 +242,7 @@ export class RuuviTrmnlApp {
           if (this.useConsoleDisplay) {
             this.updateConsoleDisplay(
               `${red("Error in periodic data cycle:")} ${errorMsg}`,
-              true
+              true,
             );
           } else {
             console.error(red("Error in periodic data cycle:"), errorMsg);
@@ -247,7 +252,7 @@ export class RuuviTrmnlApp {
     } else {
       if (this.useConsoleDisplay) {
         this.updateConsoleDisplay(
-          "⌨  Manual mode: Press SPACE to send data to TRMNL"
+          "⌨  Manual mode: Press SPACE to send data to TRMNL",
         );
       }
     }
@@ -263,7 +268,7 @@ export class RuuviTrmnlApp {
 
     if (this.useConsoleDisplay) {
       this.updateConsoleDisplay(
-        green("RuuviTRMNL application started successfully")
+        green("RuuviTRMNL application started successfully"),
       );
     } else {
       console.log(green("RuuviTRMNL application started successfully"));
@@ -317,7 +322,7 @@ export class RuuviTrmnlApp {
 
   private updateConsoleDisplay(
     message?: string,
-    isError: boolean = false
+    isError: boolean = false,
   ): void {
     const tags = this.ruuviCollector.getAllConfiguredTags();
     const collectorStats = this.ruuviCollector.getStats();
@@ -347,7 +352,7 @@ export class RuuviTrmnlApp {
     if (this.lastSentTime > 0) {
       (status as any).lastSentTime = new Date(this.lastSentTime);
       (status as any).nextSendTime = new Date(
-        this.lastSentTime + this.minSendInterval
+        this.lastSentTime + this.minSendInterval,
       );
     }
 
@@ -377,7 +382,7 @@ export class RuuviTrmnlApp {
       if (this.isRateLimited()) {
         const remainingMinutes = Math.ceil(this.getRateLimitRemainingTime());
         this.updateConsoleDisplay(
-          red(`Rate limited - ${remainingMinutes}m remaining`)
+          red(`Rate limited - ${remainingMinutes}m remaining`),
         );
         return;
       }
@@ -472,7 +477,7 @@ export class RuuviTrmnlApp {
     } catch (error: any) {
       this.updateConsoleDisplay(
         `Error in data cycle: ${error?.message ?? String(error)}`,
-        true
+        true,
       );
     }
   }
@@ -535,7 +540,7 @@ export class RuuviTrmnlApp {
       if (this.isRateLimited()) {
         const remainingMinutes = Math.ceil(this.getRateLimitRemainingTime());
         this.updateConsoleDisplay(
-          `Rate limited - cannot send for ${remainingMinutes}m`
+          `Rate limited - cannot send for ${remainingMinutes}m`,
         );
         return;
       }
@@ -545,10 +550,10 @@ export class RuuviTrmnlApp {
       // Show warning if sending too frequently, but still allow the force send
       if (this.lastSentTime > 0 && timeSinceLastSend < this.minSendInterval) {
         const remainingTime = Math.ceil(
-          (this.minSendInterval - timeSinceLastSend) / 1000
+          (this.minSendInterval - timeSinceLastSend) / 1000,
         );
         this.updateConsoleDisplay(
-          `⚡ Force sending (recommended wait: ${remainingTime}s)`
+          `⚡ Force sending (recommended wait: ${remainingTime}s)`,
         );
       } else {
         this.updateConsoleDisplay("🚀 Force sending data to TRMNL...");
@@ -636,7 +641,7 @@ export class RuuviTrmnlApp {
     } catch (error: any) {
       this.updateConsoleDisplay(
         `Error in force send: ${error?.message ?? String(error)}`,
-        true
+        true,
       );
     }
   }
@@ -651,7 +656,7 @@ export class RuuviTrmnlApp {
 
   // Setup mode methods
   private async handleScreenChange(
-    screen: "dashboard" | "setup"
+    screen: "dashboard" | "setup",
   ): Promise<void> {
     if (screen === "setup") {
       await this.initializeSetupMode();
@@ -726,7 +731,7 @@ export class RuuviTrmnlApp {
       this.updateSetupDisplay(
         `Found tag: ${shortId}${
           existingNickname ? ` (${existingNickname})` : ""
-        }`
+        }`,
       );
     }
 
@@ -765,7 +770,7 @@ export class RuuviTrmnlApp {
     } catch (error: any) {
       // This is normal if no RuuviTags are nearby
       this.updateSetupDisplay(
-        "Scanning for RuuviTags (none found yet, this is normal)"
+        "Scanning for RuuviTags (none found yet, this is normal)",
       );
       Logger.log("Setup scan: No tags found initially (this is expected)");
     }
@@ -802,7 +807,7 @@ export class RuuviTrmnlApp {
 
       // Go through all tags in config
       for (const [shortId, nickname] of Object.entries(
-        config.ruuvi.tagAliases
+        config.ruuvi.tagAliases,
       )) {
         const cached = cachedData.find((c: any) => c.id === shortId);
 
@@ -875,11 +880,11 @@ export class RuuviTrmnlApp {
       this.updateSetupDisplay(
         `Configuration saved! ${
           tagArray.filter((t) => t.nickname).length
-        } tags configured`
+        } tags configured`,
       );
     } catch (error: any) {
       this.updateSetupDisplay(
-        `Failed to save configuration: ${error?.message ?? String(error)}`
+        `Failed to save configuration: ${error?.message ?? String(error)}`,
       );
     }
   }
@@ -891,7 +896,7 @@ async function main(): Promise<void> {
 
     if (!configManager.getTrmnlWebhookUrl()) {
       throw new Error(
-        "TRMNL webhook URL not configured. Please check config.json"
+        "TRMNL webhook URL not configured. Please check config.json",
       );
     }
 
@@ -900,7 +905,7 @@ async function main(): Promise<void> {
   } catch (error: any) {
     console.error(
       "💥 Failed to start application:",
-      error?.message ?? String(error)
+      error?.message ?? String(error),
     );
     process.exit(1);
   }

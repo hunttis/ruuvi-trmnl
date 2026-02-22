@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { RuuviTagData } from "@/lib/types";
 import { Logger } from "@/lib/logger";
+import { promisify } from "util";
 
 export interface CacheEntry {
   data: RuuviTagData;
@@ -35,6 +36,29 @@ export class CacheManager {
       await this.saveToFile();
     }
 
+    // Watch the cache file for external changes (e.g., written by the
+    // separately running Python scanner) and reload when it changes.
+    try {
+      fs.watchFile(
+        this.cacheFilePath,
+        { interval: 1000 },
+        async (curr, prev) => {
+          if (curr.mtimeMs !== prev.mtimeMs) {
+            try {
+              await this.loadFromFile();
+              Logger.log("📁 Cache reloaded due to external change");
+            } catch (e) {
+              Logger.warn("📁 Failed to reload cache on change: " + String(e));
+            }
+          }
+        },
+      );
+    } catch (e) {
+      Logger.warn(
+        "📁 Failed to watch cache file for external updates: " + String(e),
+      );
+    }
+
     this.initialized = true;
   }
 
@@ -55,7 +79,7 @@ export class CacheManager {
       Logger.log(
         `🔄 Cache updated for ${tagData.name || tagId}: ${
           hasChanged ? "CHANGED" : "unchanged"
-        }`
+        }`,
       );
     }
 
@@ -100,7 +124,7 @@ export class CacheManager {
 
     this.saveToFile().catch((error) => {
       Logger.error(
-        "Error: Failed to save cache after marking tags as sent:" + error
+        "Error: Failed to save cache after marking tags as sent:" + error,
       );
     });
   }
@@ -197,7 +221,7 @@ export class CacheManager {
       await fs.promises.writeFile(
         this.cacheFilePath,
         JSON.stringify(cacheData, null, 2),
-        "utf8"
+        "utf8",
       );
     } catch (error) {
       Logger.error("Error: Failed to save cache to file:" + error);
@@ -209,14 +233,14 @@ export class CacheManager {
     try {
       const fileContent = await fs.promises.readFile(
         this.cacheFilePath,
-        "utf8"
+        "utf8",
       );
       const cacheData = JSON.parse(fileContent);
 
       if (cacheData.cache) {
         this.cache = cacheData.cache;
         Logger.log(
-          `📁 Loaded ${Object.keys(this.cache).length} cached entries from file`
+          `📁 Loaded ${Object.keys(this.cache).length} cached entries from file`,
         );
       }
     } catch (error) {
