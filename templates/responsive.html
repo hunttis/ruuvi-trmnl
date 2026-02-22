@@ -28,11 +28,9 @@ Best for: All display sizes and configurations
     <!-- Temperature -->
     <div class="layout layout--col">
       <span
-        class="value value--small sm:value--medium md:value--large lg:value--xxxlarge value--tnums text--center"
-        data-value-fit="true"
+        class="value value--xxxlarge md:value--xxxlarge lg:value--xxxlarge value--tnums text--center"
       >
-        {% if tag.temperature %}{{ tag.temperature | round: 1 }}°{% else %}-°{%
-        endif %}
+        {% if tag.temperature %}{{ tag.temperature | round: 1 }}°{% else %}-°{% endif %}
       </span>
     </div>
 
