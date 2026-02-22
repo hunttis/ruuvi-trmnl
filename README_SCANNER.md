@@ -8,8 +8,21 @@ Requirements (scanner):
 - Python 3.8+
 - Install Python dependencies:
 
+Create and use a virtual environment (recommended):
+
 ```bash
-python3 -m pip install ruuvitag_sensor bleak
+# create a local venv in the project (creates `.venv`)
+python3 -m venv .venv
+
+# fish shell activation
+source .venv/bin/activate.fish
+
+# bash / zsh activation
+source .venv/bin/activate
+
+# upgrade pip and install scanner deps inside the venv
+python -m pip install --upgrade pip
+python -m pip install ruuvitag_sensor bleak
 ```
 
 Run the scanner standalone (decoded Ruuvi payloads):
@@ -49,7 +62,7 @@ const collector = new RuuviCollector();
 // Use the ruuvi_sensor-backed script which outputs decoded data
 const scanner = new ExternalRuuviScanner(
   "python3",
-  "scanners/ruuvi_ruuvitag_sensor_scanner.py"
+  "scanners/ruuvi_ruuvitag_sensor_scanner.py",
 );
 
 scanner.on("payload", (p) => {
