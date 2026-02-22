@@ -47,3 +47,25 @@ coverage/
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Python virtualenvs and caches
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+
+# Python tooling
+.mypy_cache/
+.pytest_cache/
+
+# Workspace / OS editor state
+.vscode/*workspaceStorage*/
+.DS_Store
+
+# local test/dev artifacts
+ruuvi-scanner.pid
+*.pid
+*.sqlite3
