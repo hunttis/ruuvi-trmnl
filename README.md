@@ -31,10 +31,24 @@ Edit `config.json`:
 
 ## TRMNL Plugin
 
-Copy `templates/quadrant.html` (or other template) into a TRMNL Private Plugin.
+Copy `templates/responsive.html` (or other template) into a TRMNL Private Plugin.
 
 ## Commands
 
-- `npm start` - Run application
-- `npm run setup` - Find and configure sensors
-- `npm test` - Run tests
+| Command | Description |
+|---------|-------------|
+| `npm start` | Run application |
+| `npm run setup` | Find and configure sensors |
+| `npm run cache:inspect` | Inspect cache status |
+| `npm run cache:clear` | Clear cache file |
+| `npm run trmnl:send` | One-shot send to TRMNL |
+| `npm test` | Run tests |
+
+## Cache System
+
+The app uses intelligent caching that only sends data when sensor values change:
+
+- Only tags listed in `tagAliases` are transmitted
+- Cache persists across restarts (`ruuvi-cache.json`)
+- Hash-based change detection (temperature, humidity, pressure, battery)
+- Use `npm run cache:clear` to reset if needed

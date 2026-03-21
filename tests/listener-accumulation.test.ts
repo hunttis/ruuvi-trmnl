@@ -2,15 +2,13 @@
  * Listener Accumulation Tests
  *
  * This test suite ensures that event listeners do not accumulate over time,
- * which was a critical memory leak issue fixed in November-December 2025.
+ * which was a critical memory leak issue.
  *
  * Key areas tested:
  * 1. RuuviCollector tag 'updated' listeners - prevents duplicate listeners when tags are rediscovered
  * 2. RuuviCollector 'warning' listeners - verifies proper listener management per instance
  * 3. RuuviTrmnlApp process listeners - prevents accumulation during start/stop cycles
  * 4. Regression tests - ensures the original memory leak doesn't reoccur
- *
- * Related documentation: MEMORY_LEAK_FIX.md
  */
 
 import { EventEmitter } from "events";

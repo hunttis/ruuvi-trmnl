@@ -1,5 +1,5 @@
 import React from "react";
-import type { AppStatus } from "@/ui/ink-display";
+import type { AppStatus } from "@/ui/ink-combined-display";
 import type { SetupStatus } from "@/ui/ink-setup";
 
 type Screen = "dashboard" | "setup";

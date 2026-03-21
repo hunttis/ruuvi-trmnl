@@ -1,97 +1,189 @@
-import { ExternalRuuviScanner } from "./external-ruuvi-scanner";
+import { spawn, ChildProcess } from "child_process";
+import { EventEmitter } from "events";
+import * as fs from "fs";
+import * as readline from "readline";
+import * as path from "path";
 import { Logger } from "@/lib/logger";
 import { exec } from "child_process";
 
 export interface SupervisorOptions {
   pythonPath?: string;
   scriptPath?: string;
-  pollIntervalMs?: number; // how often to check memory
-  maxRssKb?: number; // threshold in KB to restart
+  pollIntervalMs?: number;
+  maxRssKb?: number;
   maxBackoffMs?: number;
+  pidFilePath?: string;
 }
 
-export class ScannerSupervisor {
-  private scanner: ExternalRuuviScanner;
+export interface ScannerPayload {
+  address: string;
+  timestamp?: number | null;
+  data?: Record<string, unknown>;
+}
+
+export class ScannerSupervisor extends EventEmitter {
+  private proc: ChildProcess | null = null;
   private opts: Required<SupervisorOptions>;
-  private backoffMs = 1000;
-  private restartTimer: NodeJS.Timeout | null = null;
   private pollTimer: NodeJS.Timeout | null = null;
+  private running = false;
 
   constructor(opts?: SupervisorOptions) {
+    super();
     this.opts = {
       pythonPath: opts?.pythonPath || process.env.PYTHON_PATH || "python3",
       scriptPath:
         opts?.scriptPath || "scanners/ruuvi_ruuvitag_sensor_scanner.py",
       pollIntervalMs: opts?.pollIntervalMs ?? 30_000,
-      maxRssKb: opts?.maxRssKb ?? 200 * 1024, // 200 MB
+      maxRssKb: opts?.maxRssKb ?? 200 * 1024,
       maxBackoffMs: opts?.maxBackoffMs ?? 60_000,
+      pidFilePath: opts?.pidFilePath || "ruuvi-scanner.pid",
     };
 
     Logger.log(`Supervisor: using Python path: ${this.opts.pythonPath}`);
-
-    this.scanner = new ExternalRuuviScanner(
-      this.opts.pythonPath,
-      this.opts.scriptPath,
-    );
-
-    this.scanner.on("started", () => {
-      Logger.log("Scanner started");
-      this.backoffMs = 1000; // reset backoff on success
-      this.startMemoryPoll();
-    });
-
-    this.scanner.on("stderr", (m: string) =>
-      Logger.warn(`Scanner stderr: ${m}`),
-    );
-
-    this.scanner.on("error", (err: Error) =>
-      Logger.error(`Scanner error: ${err.message}`),
-    );
-
-    this.scanner.on("exit", (code: number) => {
-      Logger.warn(`Scanner exited with code ${code}`);
-      this.stopMemoryPoll();
-      this.scheduleRestart();
-    });
+    Logger.log(`Supervisor: using script: ${this.opts.scriptPath}`);
   }
 
-  // Allow external access to the managed scanner instance for event subscriptions
-  public get scannerInstance(): ExternalRuuviScanner {
-    return this.scanner;
+  private writePidFile(pid: number): void {
+    try {
+      fs.writeFileSync(this.opts.pidFilePath, String(pid), "utf-8");
+    } catch (err) {
+      Logger.warn(
+        `Supervisor: failed to write PID file: ${String(err)}`,
+      );
+    }
+  }
+
+  private deletePidFile(): void {
+    try {
+      if (fs.existsSync(this.opts.pidFilePath)) {
+        fs.unlinkSync(this.opts.pidFilePath);
+      }
+    } catch (err) {
+      Logger.warn(
+        `Supervisor: failed to delete PID file: ${String(err)}`,
+      );
+    }
+  }
+
+  public get scannerInstance(): EventEmitter {
+    return this;
   }
 
   public start(): void {
-    if ((this as any).running) return;
+    if (this.running) return;
     Logger.log("Supervisor: starting scanner");
-    // Attempt to detect an externally started scanner (do not spawn it)
-    this.scanner.start();
-    (this as any).running = true;
+    this.running = true;
+    this.spawnScanner();
+  }
+
+  private spawnScanner(): void {
+    const scriptAbsPath = path.resolve(this.opts.scriptPath);
+
+    this.proc = spawn(this.opts.pythonPath, [scriptAbsPath], {
+      stdio: ["ignore", "pipe", "pipe"],
+      detached: false,
+    });
+
+    if (this.proc.pid) {
+      this.writePidFile(this.proc.pid);
+    }
+
+    this.setupProcessHandlers();
+  }
+
+  private setupProcessHandlers(): void {
+    if (!this.proc) return;
+
+    const proc = this.proc;
+
+    proc.on("error", (err) => {
+      Logger.error(`Scanner process error: ${err.message}`);
+      this.emit("error", err);
+    });
+
+    proc.on("exit", (code, signal) => {
+      Logger.warn(`Scanner exited with code ${code}, signal ${signal}`);
+      this.stopMemoryPoll();
+      this.deletePidFile();
+      this.emit("exit", code ?? 0);
+    });
+
+    if (proc.stdout) {
+      const rl = readline.createInterface({
+        input: proc.stdout,
+        crlfDelay: Infinity,
+      });
+
+      rl.on("line", (line) => {
+        this.handleStdoutLine(line.trim());
+      });
+    }
+
+    if (proc.stderr) {
+      const rl = readline.createInterface({
+        input: proc.stderr,
+        crlfDelay: Infinity,
+      });
+
+      rl.on("line", (line) => {
+        const trimmed = line.trim();
+        if (trimmed) {
+          Logger.warn(`Scanner stderr: ${trimmed}`);
+          this.emit("stderr", trimmed);
+        }
+      });
+    }
+  }
+
+  private handleStdoutLine(line: string): void {
+    if (!line) return;
+
+    try {
+      const msg = JSON.parse(line) as Record<string, unknown>;
+
+      if (msg.status === "started") {
+        Logger.log("Scanner started");
+        this.emit("started");
+        this.startMemoryPoll();
+        return;
+      }
+
+      if (msg.debug) {
+        Logger.log(`Scanner debug: ${msg.debug}`);
+        return;
+      }
+
+      if (msg.error) {
+        Logger.error(`Scanner error: ${msg.error}`);
+        if (msg.exception) {
+          Logger.error(`Scanner exception: ${msg.exception}`);
+        }
+        return;
+      }
+
+      if (msg.address && msg.data) {
+        const payload: ScannerPayload = {
+          address: String(msg.address),
+          timestamp:
+            typeof msg.timestamp === "number" ? msg.timestamp : null,
+          data: msg.data as Record<string, unknown>,
+        };
+        this.emit("payload", payload);
+      }
+    } catch {
+      // Not valid JSON, ignore
+    }
   }
 
   public stop(): void {
     Logger.log("Supervisor: stopping scanner");
-    this.clearRestartTimer();
+    this.running = false;
     this.stopMemoryPoll();
-    this.scanner.stop();
-    (this as any).running = false;
-  }
+    this.deletePidFile();
 
-  private scheduleRestart(): void {
-    // When the scanner is an externally managed process we will not attempt
-    // to restart it. Just log and allow detection to pick it up when it
-    // returns.
-    this.clearRestartTimer();
-    const wait = Math.min(this.backoffMs, this.opts.maxBackoffMs);
-    Logger.log(
-      `Supervisor: scanner absent — will not attempt restart (backoff ${wait}ms)`,
-    );
-    this.backoffMs = Math.min(this.backoffMs * 2, this.opts.maxBackoffMs);
-  }
-
-  private clearRestartTimer(): void {
-    if (this.restartTimer) {
-      clearTimeout(this.restartTimer);
-      this.restartTimer = null;
+    if (this.proc) {
+      this.proc.kill("SIGTERM");
+      this.proc = null;
     }
   }
 
@@ -111,11 +203,9 @@ export class ScannerSupervisor {
   }
 
   private checkChildMemory(): void {
-    const proc = this.scanner?.procHandle as any;
-    if (!proc || !proc.pid) return;
-    const pid = proc.pid;
+    if (!this.proc?.pid) return;
+    const pid = this.proc.pid;
 
-    // Use ps to get RSS in KB (works on macOS and Linux)
     exec(`ps -o rss= -p ${pid}`, (err, stdout) => {
       if (err) {
         Logger.warn(
@@ -125,15 +215,25 @@ export class ScannerSupervisor {
       }
       const rssKb = parseInt(stdout.trim(), 10) || 0;
       Logger.log(`Supervisor: scanner pid=${pid} rss=${rssKb}KB`);
+
       if (rssKb > this.opts.maxRssKb) {
         Logger.warn(
-          `Supervisor: RSS ${rssKb}KB exceeded ${this.opts.maxRssKb}KB`,
+          `Supervisor: RSS ${rssKb}KB exceeded ${this.opts.maxRssKb}KB - restarting scanner`,
         );
-        Logger.warn(
-          "Supervisor: not killing externally managed scanner process",
-        );
+        this.restartScanner();
       }
     });
+  }
+
+  private restartScanner(): void {
+    if (!this.running) return;
+
+    if (this.proc) {
+      this.proc.kill("SIGTERM");
+      this.proc = null;
+    }
+
+    this.spawnScanner();
   }
 }
 
