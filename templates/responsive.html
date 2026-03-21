@@ -30,7 +30,8 @@ Best for: All display sizes and configurations
       <span
         class="value value--xxxlarge md:value--xxxlarge lg:value--xxxlarge value--tnums text--center"
       >
-        {% if tag.temperature %}{{ tag.temperature | round: 1 }}°{% else %}-°{% endif %}
+        {% if tag.temperature %}{{ tag.temperature | round: 1 }}°{% else %}-°{%
+        endif %}
       </span>
     </div>
 
