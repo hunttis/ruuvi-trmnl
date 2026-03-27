@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as path from "path";
 import { RuuviTagData } from "@/lib/types";
 import { Logger } from "@/lib/logger";
-import { promisify } from "util";
 
 export interface CacheEntry {
   data: RuuviTagData;

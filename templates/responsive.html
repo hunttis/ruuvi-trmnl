@@ -4,62 +4,107 @@ Adaptive layout that responds to screen size, orientation, and bit-depth
 Best for: All display sizes and configurations
 -->
 
-<div
-  class="layout layout--row sm:layout--row md:portrait:layout--col lg:layout--row layout--stretch-x gap--medium md:gap--large lg:gap--xlarge"
->
-  {% for tag in ruuvi_tags %} {% assign now = 'now' | date: '%s' %} {% assign
-  lastUpdate = tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%s'
-  %} {% assign minutesOld = now | minus: lastUpdate | divided_by: 60 %} {%
-  assign isOffline = false %} {% assign isStale = false %} {% if minutesOld > 60
-  %} {% assign isOffline = true %} {% elsif minutesOld > 30 %} {% assign isStale
-  = true %} {% endif %}
+<div class="layout layout--col layout--stretch gap--medium md:gap--large lg:gap--xlarge">
 
+  <!-- Ruuvi Tags Row -->
   <div
-    class="layout layout--col stretch-x gap--xsmall sm:gap--small md:gap--medium lg:gap--large {% if isOffline or isStale %}background--muted{% endif %} padding--small sm:padding--medium md:padding--large lg:padding--xlarge rounded--small md:rounded--medium lg:rounded--large"
+    class="layout layout--row sm:layout--row md:portrait:layout--col lg:layout--row layout--stretch-x gap--medium md:gap--large lg:gap--xlarge"
   >
-    <!-- Location Name with timestamp -->
-    <span
-      class="title title--xxsmall sm:title--xsmall md:title--small lg:title--medium text--center"
-      >{{ tag.name | truncate: 12 }}{% if isStale and tag.temperature %} ({{
-      tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%H:%M' }}){%
-      endif %}</span
-    >
+    {% for tag in ruuvi_tags %} {% assign now = 'now' | date: '%s' %} {% assign
+    lastUpdate = tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%s'
+    %} {% assign minutesOld = now | minus: lastUpdate | divided_by: 60 %} {%
+    assign isOffline = false %} {% assign isStale = false %} {% if minutesOld > 60
+    %} {% assign isOffline = true %} {% elsif minutesOld > 30 %} {% assign isStale
+    = true %} {% endif %}
 
-    <!-- Temperature -->
-    <div class="layout layout--col">
+    <div
+      class="layout layout--col stretch-x gap--xsmall sm:gap--small md:gap--medium lg:gap--large {% if isOffline or isStale %}background--muted{% endif %} padding--small sm:padding--medium md:padding--large lg:padding--xlarge rounded--small md:rounded--medium lg:rounded--large"
+    >
+      <!-- Location Name with timestamp -->
       <span
-        class="value value--xxxlarge md:value--xxxlarge lg:value--xxxlarge value--tnums text--center"
+        class="title title--xxsmall sm:title--xsmall md:title--small lg:title--medium text--center"
+        >{{ tag.name | truncate: 12 }}{% if isStale and tag.temperature %} ({{
+        tag.lastTemperatureUpdate | default: tag.lastUpdated | date: '%H:%M' }}){%
+        endif %}</span
       >
-        {% if tag.temperature %}{{ tag.temperature | round: 1 }}°{% else %}-°{% endif %}
+
+      <!-- Temperature -->
+      <div class="layout layout--col">
+        <span
+          class="value value--xxxlarge md:value--xxxlarge lg:value--xxxlarge value--tnums text--center"
+        >
+          {% if tag.temperature %}{{ tag.temperature | round: 1 }}°{% else %}-°{%
+          endif %}
+        </span>
+      </div>
+
+      <!-- Humidity -->
+      <span
+        class="value value--xxsmall sm:value--xsmall md:value--small lg:value--medium value--tnums text--center"
+      >
+        {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}-%{% endif %}
       </span>
+
+      <!-- Battery (hidden on smallest screens, shown on larger) -->
+      <span
+        class="label label--xxxsmall sm:label--xxsmall md:label--xsmall lg:label--small text--center sm:hidden md:visible"
+      >
+        {% if tag.battery %}{{ tag.battery }}mV{% endif %}
+      </span>
+
+      <!-- Status if offline or stale -->
+      {% if isOffline %}
+      <span
+        class="label label--xxxsmall sm:label--xxsmall md:label--xsmall lg:label--small text--center"
+        >OFFLINE</span
+      >
+      {% elsif isStale %}
+      <span
+        class="label label--xxxsmall sm:label--xxsmall md:label--xsmall lg:label--small text--center"
+        >{{ tag.lastUpdated | date: '%d.%m. %H:%M' }}</span
+      >
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Weather Section -->
+  {% if weather %}
+  <div
+    class="layout layout--col gap--xsmall sm:gap--small padding--small sm:padding--medium rounded--small md:rounded--medium"
+    style="border-top: 1px solid currentColor; opacity: 0.85;"
+  >
+    <!-- Current conditions -->
+    <div class="layout layout--row layout--stretch-x gap--medium">
+      <span class="label label--xxsmall sm:label--xsmall md:label--small">
+        {{ weather.location }}
+      </span>
+      <span class="value value--small sm:value--medium value--tnums">
+        {{ weather.current.feelsLike | round: 1 }}°
+      </span>
+      <span class="label label--xxsmall sm:label--xsmall md:label--small">
+        {{ weather.current.symbolText }}
+      </span>
+      {% if weather.current.precipitation > 0 %}
+      <span class="label label--xxsmall sm:label--xsmall md:label--small">
+        {{ weather.current.precipitation }} mm/h
+      </span>
+      {% endif %}
     </div>
 
-    <!-- Humidity -->
-    <span
-      class="value value--xxsmall sm:value--xsmall md:value--small lg:value--medium value--tnums text--center"
-    >
-      {% if tag.humidity %}{{ tag.humidity | round: 0 }}%{% else %}-%{% endif %}
-    </span>
-
-    <!-- Battery (hidden on smallest screens, shown on larger) -->
-    <span
-      class="label label--xxxsmall sm:label--xxsmall md:label--xsmall lg:label--small text--center sm:hidden md:visible"
-    >
-      {% if tag.battery %}{{ tag.battery }}mV{% endif %}
-    </span>
-
-    <!-- Status if offline or stale -->
-    {% if isOffline %}
-    <span
-      class="label label--xxxsmall sm:label--xxsmall md:label--xsmall lg:label--small text--center"
-      >OFFLINE</span
-    >
-    {% elsif isStale %}
-    <span
-      class="label label--xxxsmall sm:label--xxsmall md:label--xsmall lg:label--small text--center"
-      >{{ tag.lastUpdated | date: '%d.%m. %H:%M' }}</span
-    >
+    <!-- Hourly forecast -->
+    {% if weather.forecast.size > 0 %}
+    <div class="layout layout--row gap--small sm:gap--medium">
+      {% for hour in weather.forecast %}
+      <div class="layout layout--col gap--xsmall" style="min-width: 0; flex: 1;">
+        <span class="label label--xxxsmall sm:label--xxsmall text--center">{{ hour.time }}</span>
+        <span class="value value--xsmall sm:value--small value--tnums text--center">{{ hour.temperature | round: 0 }}°</span>
+        <span class="label label--xxxsmall sm:label--xxsmall text--center" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ hour.symbolText }}</span>
+      </div>
+      {% endfor %}
+    </div>
     {% endif %}
   </div>
-  {% endfor %}
+  {% endif %}
+
 </div>

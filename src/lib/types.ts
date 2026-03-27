@@ -25,6 +25,7 @@ export interface RuuviCollectionData {
   lastRefresh: string;
   totalTags: number;
   scanDuration?: number;
+  weather?: WeatherData;
 }
 
 export interface TrmnlWebhookResponse {
@@ -50,6 +51,22 @@ export interface RawRuuviData {
   measurementSequenceNumber?: number;
   mac?: string;
   dataFormat?: number;
+}
+
+export interface WeatherHour {
+  time: string; // "HH:MM" in Helsinki time
+  temperature: number;
+  feelsLike: number;
+  symbol: number; // FMI WeatherSymbol3 code
+  symbolText: string;
+  precipitation: number; // mm/h
+}
+
+export interface WeatherData {
+  location: string;
+  current: WeatherHour;
+  forecast: WeatherHour[]; // next N hours
+  fetchedAt: string;
 }
 
 export interface RawRuuviTag {

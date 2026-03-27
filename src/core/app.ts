@@ -1,6 +1,7 @@
 import { configManager } from "@/lib/config";
 import { RuuviCollector } from "@/collectors/ruuvi-collector";
 import { TrmnlWebhookSender } from "@/trmnl/trmnl-sender";
+import { FmiCollector } from "@/collectors/fmi-collector";
 import { RuuviTagData, RawRuuviTag, RawRuuviData } from "@/lib/types";
 import { CombinedDisplay } from "@/ui/ink-combined-display";
 import { Logger } from "@/lib/logger";
@@ -28,6 +29,7 @@ export interface DiscoveredTag {
 export class RuuviTrmnlApp {
   private ruuviCollector: RuuviCollector;
   private trmnlSender: TrmnlWebhookSender;
+  private fmiCollector: FmiCollector;
   private consoleDisplay: CombinedDisplay;
   private intervalId: NodeJS.Timeout | null = null;
   private displayUpdateIntervalId: NodeJS.Timeout | null = null;
@@ -65,6 +67,7 @@ export class RuuviTrmnlApp {
   constructor(useConsoleDisplay: boolean = true, manualMode: boolean = false) {
     this.ruuviCollector = new RuuviCollector();
     this.trmnlSender = new TrmnlWebhookSender();
+    this.fmiCollector = new FmiCollector("Helsinki");
     this.consoleDisplay = new CombinedDisplay();
     this.setupCacheManager = new CacheManager();
     this.useConsoleDisplay = useConsoleDisplay;
@@ -446,16 +449,20 @@ export class RuuviTrmnlApp {
         }),
       }));
 
+      // Fetch weather data from FMI
+      const weatherData = await this.fmiCollector.fetchWeather();
+
       // Store the data that will be sent for display
       this.lastSentData = {
         merge_variables: {
           ruuvi_tags: formattedDataset,
           lastRefresh: this.formatDateTime(new Date().toISOString()),
           totalTags: formattedDataset.length,
+          ...(weatherData && { weather: weatherData }),
         },
       };
 
-      const response = await this.trmnlSender.sendRuuviData(completeDataset);
+      const response = await this.trmnlSender.sendRuuviData(completeDataset, weatherData);
 
       this.lastResponseCode = response.statusCode;
       this.lastResponseMessage =
@@ -610,16 +617,20 @@ export class RuuviTrmnlApp {
         }),
       }));
 
+      // Fetch weather data from FMI
+      const weatherData = await this.fmiCollector.fetchWeather();
+
       // Store the data that will be sent for display
       this.lastSentData = {
         merge_variables: {
           ruuvi_tags: formattedDataset,
           lastRefresh: this.formatDateTime(new Date().toISOString()),
           totalTags: formattedDataset.length,
+          ...(weatherData && { weather: weatherData }),
         },
       };
 
-      const response = await this.trmnlSender.sendRuuviData(completeDataset);
+      const response = await this.trmnlSender.sendRuuviData(completeDataset, weatherData);
 
       this.lastResponseCode = response.statusCode;
       this.lastResponseMessage =

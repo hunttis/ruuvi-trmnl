@@ -1,6 +1,57 @@
 import React from "react";
-import type { AppStatus } from "@/ui/ink-display";
 import type { SetupStatus } from "@/ui/ink-setup";
+
+export interface LastSentData {
+  tags?: Array<{
+    id?: string;
+    name?: string;
+    temperature?: number;
+    humidity?: number;
+    pressure?: number;
+    battery?: number;
+    signal?: number;
+    lastUpdated?: string;
+    status?: string;
+  }>;
+}
+
+export interface AppStatus {
+  isRunning: boolean;
+  startTime: Date;
+  lastUpdateTime?: Date;
+  lastSentTime?: Date;
+  nextSendTime?: Date;
+  collectorStats: {
+    totalDiscovered: number;
+    activeCount: number;
+    staleCount: number;
+  };
+  cacheStats: {
+    totalTags: number;
+    allowedTags: number;
+    pendingSend: number;
+  };
+  webhookInfo: {
+    url: string;
+    strategy: string;
+    timeout: number;
+  };
+  trmnlStats: {
+    totalSent: number;
+    lastResponseCode?: number;
+    lastResponseMessage?: string;
+  };
+  lastSentData?: LastSentData;
+  tags?: LastSentData["tags"];
+  lastError?: string;
+  rateLimitedUntil?: Date;
+  rateLimitRemainingMinutes?: number;
+  scannerStatus?: {
+    running: boolean;
+    lastError?: string;
+    restarts?: number;
+  };
+}
 
 type Screen = "dashboard" | "setup";
 
