@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RuuviTRMNL Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* TRMNL screen simulation: 800x480 */
+    .screen {
+      width: 800px;
+      height: 480px;
+      background: #fff;
+      color: #000;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    /* ---- Layout utilities ---- */
+    .row { display: flex; flex-direction: row; }
+    .col { display: flex; flex-direction: column; }
+    .stretch { flex: 1; }
+    .center { justify-content: center; align-items: center; }
+    .space-between { justify-content: space-between; }
+    .gap-xs { gap: 4px; }
+    .gap-sm { gap: 8px; }
+    .gap-md { gap: 16px; }
+    .gap-lg { gap: 24px; }
+    .text-center { text-align: center; }
+
+    /* ---- Typography ---- */
+    .temp-large {
+      font-size: 72px;
+      font-weight: bold;
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+    .tag-name {
+      font-size: 13px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .humidity {
+      font-size: 22px;
+      font-weight: bold;
+    }
+    .battery {
+      font-size: 10px;
+      opacity: 0.6;
+    }
+
+    /* ---- Tag card ---- */
+    .tag-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+    .tag-card.stale { background: #f0f0f0; }
+
+    /* ---- Ruuvi row ---- */
+    .ruuvi-row {
+      display: flex;
+      flex-direction: row;
+      gap: 12px;
+      flex: 1;
+    }
+
+    /* ---- Divider ---- */
+    .divider {
+      border-top: 1px solid #bbb;
+      margin: 0;
+    }
+
+    /* ---- Weather section ---- */
+    .weather {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .weather-current {
+      display: flex;
+      flex-direction: row;
+      align-items: baseline;
+      gap: 14px;
+    }
+
+    .weather-location {
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.7;
+    }
+
+    .weather-feels {
+      font-size: 32px;
+      font-weight: bold;
+      letter-spacing: -1px;
+    }
+
+    .weather-condition {
+      font-size: 14px;
+      opacity: 0.85;
+    }
+
+    .weather-precip {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    .forecast-row {
+      display: flex;
+      flex-direction: row;
+      gap: 0;
+    }
+
+    .forecast-hour {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 4px 2px;
+      border-right: 1px solid #e0e0e0;
+    }
+    .forecast-hour:last-child { border-right: none; }
+
+    .forecast-time {
+      font-size: 10px;
+      opacity: 0.6;
+      font-weight: bold;
+    }
+
+    .forecast-temp {
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    .forecast-cond {
+      font-size: 9px;
+      opacity: 0.7;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="screen">
+
+    <!-- Ruuvi Tags -->
+    <div class="ruuvi-row">
+
+      <div class="tag-card">
+        <span class="tag-name">Living Room</span>
+        <span class="temp-large">22.3°</span>
+        <span class="humidity">47%</span>
+        <span class="battery">2891mV</span>
+      </div>
+
+      <div class="tag-card">
+        <span class="tag-name">Outdoor</span>
+        <span class="temp-large">4.1°</span>
+        <span class="humidity">82%</span>
+        <span class="battery">2940mV</span>
+      </div>
+
+      <div class="tag-card stale">
+        <span class="tag-name">Sauna</span>
+        <span class="temp-large">18.7°</span>
+        <span class="humidity">55%</span>
+        <span class="battery">2760mV</span>
+      </div>
+
+    </div>
+
+    <!-- Divider -->
+    <div class="divider"></div>
+
+    <!-- Weather -->
+    <div class="weather">
+      <div class="weather-current">
+        <span class="weather-location">Helsinki</span>
+        <span class="weather-feels">3°</span>
+        <span class="weather-condition">Partly cloudy</span>
+        <span class="weather-precip">0.0 mm/h</span>
+      </div>
+      <div class="forecast-row">
+        <div class="forecast-hour">
+          <span class="forecast-time">14:00</span>
+          <span class="forecast-temp">5°</span>
+          <span class="forecast-cond">Partly cloudy</span>
+        </div>
+        <div class="forecast-hour">
+          <span class="forecast-time">15:00</span>
+          <span class="forecast-temp">5°</span>
+          <span class="forecast-cond">Cloudy</span>
+        </div>
+        <div class="forecast-hour">
+          <span class="forecast-time">16:00</span>
+          <span class="forecast-temp">4°</span>
+          <span class="forecast-cond">Light rain</span>
+        </div>
+        <div class="forecast-hour">
+          <span class="forecast-time">17:00</span>
+          <span class="forecast-temp">3°</span>
+          <span class="forecast-cond">Rain</span>
+        </div>
+        <div class="forecast-hour">
+          <span class="forecast-time">18:00</span>
+          <span class="forecast-temp">2°</span>
+          <span class="forecast-cond">Light rain</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

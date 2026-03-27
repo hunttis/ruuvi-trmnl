@@ -4,6 +4,7 @@ import {
   TrmnlWebhookResponse,
   RuuviCollectionData,
   RuuviTagData,
+  WeatherData,
 } from "@/lib/types";
 import { Logger } from "@/lib/logger";
 import { ErrorLogger } from "@/lib/error-logger";
@@ -23,10 +24,11 @@ export class TrmnlWebhookSender {
   }
 
   public async sendRuuviData(
-    tagData: RuuviTagData[]
+    tagData: RuuviTagData[],
+    weatherData?: WeatherData | null
   ): Promise<TrmnlWebhookResponse> {
     try {
-      const payload = this.formatPayload(tagData);
+      const payload = this.formatPayload(tagData, weatherData);
       const response = await this.makeWebhookRequest(payload);
 
       if (response.success) {
@@ -52,7 +54,7 @@ export class TrmnlWebhookSender {
     }
   }
 
-  private formatPayload(tagData: RuuviTagData[]): TrmnlWebhookPayload {
+  private formatPayload(tagData: RuuviTagData[], weatherData?: WeatherData | null): TrmnlWebhookPayload {
     // Helper to format dates as yy-MM-dd hh:mm
     const formatDateTime = (isoString: string): string => {
       const date = new Date(isoString);
@@ -82,6 +84,7 @@ export class TrmnlWebhookSender {
       ruuvi_tags: filteredTags,
       lastRefresh: formatDateTime(new Date().toISOString()),
       totalTags: filteredTags.length,
+      ...(weatherData && { weather: weatherData }),
     };
 
     const payload: TrmnlWebhookPayload = {
